@@ -95,6 +95,7 @@ private[server] class ControllerServer(serverListenerEventBus: ServerListenerEve
     if(socket.user.isEmpty && socketServerEvent.serverEvent.getMethod != BDP_SERVER_SOCKET_LOGIN_URI.getValue) {
       socket.sendMessage(Message.noLogin("You are not logged in, please login first!(您尚未登录，请先登录!)").data("websocketTag", socketServerEvent.serverEvent.getWebsocketTag) << socketServerEvent.serverEvent.getMethod)
     } else Utils.tryCatch(serverListenerEventBus.post(socketServerEvent)){
+      //推送信息到listenerbus
       case t: BDPServerErrorException => Message.error(t.getMessage, t).data("websocketTag", socketServerEvent.serverEvent.getWebsocketTag) << socketServerEvent.serverEvent.getMethod
     }
   }

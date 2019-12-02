@@ -27,6 +27,8 @@ import org.eclipse.jetty.websocket.api.{Session, WebSocketAdapter}
 /**
   * Created by enjoyyin on 2018/1/9.
   */
+//这个对象在websoket连接创建的时候都会创建一个这个对象，在ControllerServer中的configure方法中的webSocketServletFactory
+//中进行创建
 case class ServerSocket(request: HttpServletRequest, socketListener: SocketListener, protocol: String = "")
   extends WebSocketAdapter {
   private var session: Session = _
