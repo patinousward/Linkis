@@ -36,9 +36,12 @@ class ServerListenerEventBus(eventQueueCapacity: Int, name: String,
     val serverEvent = event.serverEvent
     if(StringUtils.isEmpty(serverEvent.getMethod)) info("ignore empty method with " + serverEvent.getData)
     else if(serverEvent.getMethod.startsWith(listener.serviceName)) {
+      //前台的请求最后到达这里，调用listener的onEvent方法  listener其实是entrance中的ServerEventService的实现类：EntranceWebSocketService
+      //这个类会提交job，然后马上返回一个
       val response = listener.onEvent(serverEvent)
       if(response != null) {
         response.setMethod(serverEvent.getMethod)
+        //这个类会提交job，然后返回一个  taskId，executeId给前台
         event.socket.sendMessage(response)
       }
     }

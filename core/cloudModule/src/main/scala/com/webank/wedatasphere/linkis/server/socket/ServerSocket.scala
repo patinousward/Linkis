@@ -54,7 +54,7 @@ case class ServerSocket(request: HttpServletRequest, socketListener: SocketListe
     session = sess
     socketListener.onOpen(this)
   }
-
+//接受websoket请求的时候触发A WebSocket Text frame was received. message是请求参数，就是定义的executionCode等等
   override def onWebSocketText(message: String): Unit = socketListener.onMessage(this, message)
 
   def sendMessage(message: String): Unit ={

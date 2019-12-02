@@ -87,6 +87,7 @@ private[server] class ControllerServer(serverListenerEventBus: ServerListenerEve
       socket.sendMessage(Message.error("Empty message!"))
       return
     }
+    //将前台请求的message封装为ServerEvent，再封装为SocketServerEvent
     val socketServerEvent = Utils.tryCatch(new SocketServerEvent(socket, message)){ t =>
       warn("parse message failed!", t)
       socket.sendMessage(Message.error(ExceptionUtils.getRootCauseMessage(t), t))
@@ -95,7 +96,9 @@ private[server] class ControllerServer(serverListenerEventBus: ServerListenerEve
     if(socket.user.isEmpty && socketServerEvent.serverEvent.getMethod != BDP_SERVER_SOCKET_LOGIN_URI.getValue) {
       socket.sendMessage(Message.noLogin("You are not logged in, please login first!(您尚未登录，请先登录!)").data("websocketTag", socketServerEvent.serverEvent.getWebsocketTag) << socketServerEvent.serverEvent.getMethod)
     } else Utils.tryCatch(serverListenerEventBus.post(socketServerEvent)){
-      //推送信息到listenerbus
+      //推送信息到listenerbus，最终还是调用socket.sendMessage 方法推送到前台？意义何在，还不如直接在这个方法中
+      //进行，因为这个方法也能拿到socket
+      //但是这里并不能拿到返回得taskID，所以要提交到listenerBus中，由注册得listener进行提交job，并返回数据
       case t: BDPServerErrorException => Message.error(t.getMessage, t).data("websocketTag", socketServerEvent.serverEvent.getWebsocketTag) << socketServerEvent.serverEvent.getMethod
     }
   }
