@@ -30,7 +30,8 @@ abstract class ServerEventService extends EventListener with Logging {
   //ControllerServer也在 BDPJettyServerHelper中
 
   protected val gson: Gson = BDPJettyServerHelper.gson
-
+//所以后台推送给前台的信息主要有2种途径，1是这里的方法sendMessage进行推送
+  //2是前台使用websoket请求execute的接口的时候，从ControllerServer的onMessage  -->entrance提交job返回taskId--> 推送回前台
   protected def sendMessage(id: Int, message: Message) = BDPJettyServerHelper.getControllerServer.sendMessage(id, message)
 
   protected def sendMessageToUser(user: String, message: Message): Unit = BDPJettyServerHelper.getControllerServer.sendMessageToUser(user, message)
