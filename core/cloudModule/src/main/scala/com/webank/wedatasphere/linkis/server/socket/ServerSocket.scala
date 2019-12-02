@@ -30,9 +30,9 @@ import org.eclipse.jetty.websocket.api.{Session, WebSocketAdapter}
 case class ServerSocket(request: HttpServletRequest, socketListener: SocketListener, protocol: String = "")
   extends WebSocketAdapter {
   private var session: Session = _
-  private[socket] var id: Int = _
+  private[socket] var id: Int = _   //原子操作自增
   val createTime = System.currentTimeMillis
-  def user = SecurityFilter.getLoginUser(request)
+  def user = SecurityFilter.getLoginUser(request)//从这可以看出自己封装一层的好处
   //Add a queue to do buffering, can not directly sendMessage back, will lead to the connection can not stand
   //加一个队列做缓冲，不能直接sendMessage回去，会导致连接受不住
   private val cacheMessages = new BlockingLoopArray[String](100)
@@ -40,7 +40,7 @@ case class ServerSocket(request: HttpServletRequest, socketListener: SocketListe
     override def run(): Unit = {
       var message = cacheMessages.poll()
       while(message.isDefined) {
-        message.foreach(session.getRemote.sendString)
+        message.foreach(session.getRemote.sendString)//正真发送数据给浏览器的api
         message = cacheMessages.poll()
       }
     }
