@@ -30,7 +30,7 @@ class ServerEvent() extends Event {
   private var method: String = _
   private var data: util.Map[String, Object] = _
   private var user: String = _
-  private var websocketTag: String = _
+  private var websocketTag: String = _  //前台MD5脚本名
   def setId(id: Int) = this.id = id
   def getId = id
   def setUser(user: String) = this.user = user
