@@ -47,7 +47,7 @@ private[server] class ControllerServer(serverListenerEventBus: ServerListenerEve
     webSocketServletFactory.setCreator(new WebSocketCreator {
       override def createWebSocket(servletUpgradeRequest: ServletUpgradeRequest,
                                    servletUpgradeResponse: ServletUpgradeResponse): AnyRef =
-        ServerSocket(servletUpgradeRequest.getHttpServletRequest, ControllerServer.this)
+        ServerSocket(servletUpgradeRequest.getHttpServletRequest, ControllerServer.this)//外部类.this 访问外部类的域
     })
   }
 
