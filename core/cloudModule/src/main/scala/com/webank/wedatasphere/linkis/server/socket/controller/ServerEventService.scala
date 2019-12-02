@@ -24,7 +24,7 @@ import com.webank.wedatasphere.linkis.server.{BDPJettyServerHelper, Message, cat
 /**
   * Created by enjoyyin on 2018/1/11.
   */
-abstract class ServerEventService extends EventListener with Logging {
+abstract class ServerEventService extends EventListener with Logging {//这个类被 设计为初始化的时候才注册到ServerListenerEventBus中
 
   protected val gson: Gson = BDPJettyServerHelper.gson
 

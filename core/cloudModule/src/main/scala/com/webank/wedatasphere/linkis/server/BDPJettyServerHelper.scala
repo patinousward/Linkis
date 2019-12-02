@@ -83,7 +83,7 @@ private[linkis] object BDPJettyServerHelper extends Logging {
     if(controllerServer != null) return controllerServer
     synchronized {
       if(controllerServer != null) return controllerServer
-      createServerListenerEventBus()
+      createServerListenerEventBus()//开启listenerBus
       controllerServer = new ControllerServer(serverListenerEventBus)
       val maxTextMessageSize = BDP_SERVER_SOCKET_TEXT_MESSAGE_SIZE_MAX.getValue
       val servletHolder = new ServletHolder(controllerServer)

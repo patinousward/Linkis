@@ -181,9 +181,9 @@ public class DataWorkCloudApplication extends SpringBootServletInitializer {
                         filterHolder.setInitParameter("encoding", Configuration.BDP_ENCODING().getValue());
                         filterHolder.setInitParameter("forceEncoding", "true");
                         webApp.addFilter(filterHolder, "/*", EnumSet.allOf(DispatcherType.class));
-                        BDPJettyServerHelper.setupRestApiContextHandler(webApp);
+                        BDPJettyServerHelper.setupRestApiContextHandler(webApp);//设置securityFiilter
                         if(ServerConfiguration.BDP_SERVER_SOCKET_MODE().getValue()) {
-                            BDPJettyServerHelper.setupControllerServer(webApp);
+                            BDPJettyServerHelper.setupControllerServer(webApp);//开启websoket，目前只有entrance开启了
                         }
                         if(!ServerConfiguration.BDP_SERVER_DISTINCT_MODE().getValue()) {
                             BDPJettyServerHelper.setupWebAppContext(webApp);
