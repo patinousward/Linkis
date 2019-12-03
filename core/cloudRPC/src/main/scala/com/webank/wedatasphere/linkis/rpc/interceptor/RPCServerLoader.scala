@@ -41,7 +41,7 @@ trait RPCServerLoader {
 }
 abstract class AbstractRPCServerLoader extends RPCServerLoader with Logging {
 
-  type SpringCloudServiceInstance = org.springframework.cloud.client.ServiceInstance
+  type SpringCloudServiceInstance = org.springframework.cloud.client.ServiceInstance //类名和spring定义的重复了，用type来简称
 
   val refreshMaxWaitTime: Duration
 

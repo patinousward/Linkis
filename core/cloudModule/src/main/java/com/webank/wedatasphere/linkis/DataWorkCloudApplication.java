@@ -62,7 +62,7 @@ import java.util.EnumSet;
  * Created by enjoyyin on 2018/8/6.
  */
 @SpringBootApplication
-@EnableDiscoveryClient
+@EnableDiscoveryClient//包含eureka
 @RefreshScope
 @ComponentScan(basePackages = "com.webank.wedatasphere",
         excludeFilters = @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {DataWorkCloudCustomExcludeFilter.class}))

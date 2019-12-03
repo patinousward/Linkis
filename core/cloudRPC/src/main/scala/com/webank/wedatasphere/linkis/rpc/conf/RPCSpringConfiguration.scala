@@ -34,7 +34,7 @@ import org.springframework.context.event.EventListener
   * Created by enjoyyin on 2019/1/14.
   */
 @Configuration
-@EnableFeignClients
+@EnableFeignClients//去掉这个注解ok吗
 class RPCSpringConfiguration extends Logging {
 
   @Bean(Array("rpcServerLoader"))
@@ -43,6 +43,15 @@ class RPCSpringConfiguration extends Logging {
   def createRPCServerLoader(): RPCServerLoader = new EurekaRPCServerLoader
 
   @EventListener
+  //ApplicationPreparedEvent
+/*  SpringBoot Application共支持6种事件监听，按顺序分别是：
+
+  ApplicationStartingEvent：在Spring最开始启动的时候触发
+  ApplicationEnvironmentPreparedEvent：在Spring已经准备好上下文但是上下文尚未创建的时候触发
+  ApplicationPreparedEvent：在Bean定义加载之后、刷新上下文之前触发
+  ApplicationStartedEvent：在刷新上下文之后、调用application命令之前触发
+  ApplicationReadyEvent：在调用applicaiton命令之后触发
+  ApplicationFailedEvent：在启动Spring发生异常时触发*/
   def completeInitialize(applicationPreparedEvent: ApplicationPreparedEvent): Unit = {
     val restfulClasses = ServerConfiguration.BDP_SERVER_RESTFUL_REGISTER_CLASSES.getValue
     if(StringUtils.isEmpty(restfulClasses))

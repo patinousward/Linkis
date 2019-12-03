@@ -41,7 +41,7 @@ class EurekaClientRefreshUtils {
       case disClient: NetflixDiscoveryClient =>
         val refreshRegistry = classOf[NetflixDiscoveryClient].getDeclaredMethod("refreshRegistry")
         refreshRegistry.setAccessible(true)
-        refreshRegistry.invoke(disClient)
+        refreshRegistry.invoke(disClient)//反射调用EurekaClient的refreshRegistry方法
         Thread.sleep(100)
       case _ =>
     }
