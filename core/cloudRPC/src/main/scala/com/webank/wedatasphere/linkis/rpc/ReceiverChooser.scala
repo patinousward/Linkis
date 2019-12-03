@@ -23,7 +23,7 @@ import java.util
   */
 trait ReceiverChooser {
 
-  def getReceivers: util.Map[String, Receiver] = RPCSpringBeanCache.getReceivers
+  def getReceivers: util.Map[String, Receiver] = RPCSpringBeanCache.getReceivers //从bean 中取出类型是Recevier的Compoment注解标注的
 
   def chooseReceiver(event: RPCMessageEvent): Option[Receiver]
 
