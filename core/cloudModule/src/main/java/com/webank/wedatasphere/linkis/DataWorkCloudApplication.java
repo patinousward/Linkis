@@ -157,6 +157,7 @@ public class DataWorkCloudApplication extends SpringBootServletInitializer {
     }
 
     public static void setProperty(String key, String value) {
+        //extractConfig 中添加内容
         BDPConfiguration.set(key, value);
     }
 
