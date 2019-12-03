@@ -37,11 +37,21 @@ private[rpc] object RPCSpringBeanCache extends Logging {
   private var senderBuilders: Array[BroadcastSenderBuilder] = _
   private var rpcReceiveRestful: RPCReceiveRestful = _
 
+  /**
+    * 没有被调用
+    * @param receiverName
+    * @param receiver
+    */
   def registerReceiver(receiverName: String, receiver: Receiver): Unit = {
     if(beanNameToReceivers == null) beanNameToReceivers = getApplicationContext.getBeansOfType(classOf[Receiver])
     info(s"register a new receiver with name $receiverName, receiver is " + receiver)
     beanNameToReceivers synchronized beanNameToReceivers.put(receiverName, receiver)
   }
+
+  /**
+    * 也没有被调用
+    * @param receiverChooser
+    */
   def registerReceiverChooser(receiverChooser: ReceiverChooser): Unit = {
     if(rpcReceiveRestful == null)
       rpcReceiveRestful = getApplicationContext.getBean(classOf[RPCReceiveRestful])
@@ -53,6 +63,10 @@ private[rpc] object RPCSpringBeanCache extends Logging {
     rpcReceiveRestful.registerBroadcastListener(broadcastListener)
   }
 
+  /**
+    * 获取receiver的时候直接初始化  beanNameToReceivers 就是获取Receiver类型的Conpoment
+    * @return
+    */
   private[rpc] def getReceivers: util.Map[String, Receiver] = {
     if(beanNameToReceivers == null) beanNameToReceivers = getApplicationContext.getBeansOfType(classOf[Receiver])
     beanNameToReceivers

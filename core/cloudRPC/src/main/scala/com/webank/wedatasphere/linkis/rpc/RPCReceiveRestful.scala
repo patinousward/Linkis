@@ -73,7 +73,7 @@ private[rpc] class RPCReceiveRestful extends RPCReceiveRemote with Logging {
   @PostConstruct
   def initListenerBus(): Unit =  {
     if(!receiverChoosers.exists(_.isInstanceOf[CommonReceiverChooser]))
-      receiverChoosers = receiverChoosers :+ new CommonReceiverChooser
+      receiverChoosers = receiverChoosers :+ new CommonReceiverChooser//如果没有自己定义Chooser，就用Comment的，Commnet的选择策略是直接通过名字
     info("init all receiverChoosers in spring beans, list => " + receiverChoosers.toList)
     if(!receiverSenderBuilders.exists(_.isInstanceOf[CommonReceiverSenderBuilder]))
       receiverSenderBuilders = receiverSenderBuilders :+ new CommonReceiverSenderBuilder
