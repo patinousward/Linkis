@@ -63,7 +63,7 @@ import java.util.EnumSet;
  */
 @SpringBootApplication
 @EnableDiscoveryClient//包含eureka
-@RefreshScope
+@RefreshScope//应该是暂时没用上这个功能的。包括remoteconfig的功能
 @ComponentScan(basePackages = "com.webank.wedatasphere",
         excludeFilters = @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {DataWorkCloudCustomExcludeFilter.class}))
 public class DataWorkCloudApplication extends SpringBootServletInitializer {
@@ -76,6 +76,16 @@ public class DataWorkCloudApplication extends SpringBootServletInitializer {
         return applicationContext;
     }
 
+
+    /**最简单的springApplication的调用其实也是走的new的过程
+     * SpringApplication.run(类名.class, args);
+     * 源码：
+     *     public static ConfigurableApplicationContext run(Class<?>[] primarySources, String[] args) {
+     return (new SpringApplication(primarySources)).run(args);
+     }
+     * @param args
+     * @throws ReflectiveOperationException
+     */
     public static void main(String[] args) throws ReflectiveOperationException {
         RuntimeDelegate.setInstance(new org.glassfish.jersey.internal.RuntimeDelegateImpl());
         final SpringApplication application = new SpringApplication(DataWorkCloudApplication.class);
