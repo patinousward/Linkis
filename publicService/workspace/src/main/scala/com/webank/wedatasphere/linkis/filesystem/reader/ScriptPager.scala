@@ -17,14 +17,14 @@ class ScriptPager extends Pager {
   }
 
   override def getBody(): Object = {
-    val recordList = new util.ArrayList[String]()
+    val recordList = new StringBuilder
     while(reader.hasNext && count<=end){
       val line = reader.getRecord.asInstanceOf[ScriptRecord].getLine
-      if(count>=start)recordList.add(line)
+      if(count>=start)recordList.append(line).append("\n")
       count += 1
       totalLine +=1
     }
-    recordList.foldLeft("")((a,b)=>a + b + "\n")  //速度慢
+    recordList.toString()  //速度慢
   }
 
   private var reader:ScriptFsReader = _
