@@ -24,6 +24,9 @@ import com.webank.wedatasphere.linkis.common.io.resultset.ResultSet;
 import com.webank.wedatasphere.linkis.filesystem.conf.WorkSpaceConfiguration;
 import com.webank.wedatasphere.linkis.filesystem.entity.DirFileTree;
 import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException;
+import com.webank.wedatasphere.linkis.filesystem.reader.Pager;
+import com.webank.wedatasphere.linkis.filesystem.reader.Pager$;
+import com.webank.wedatasphere.linkis.filesystem.reader.TextFileReader;
 import com.webank.wedatasphere.linkis.filesystem.restful.remote.FsRestfulRemote;
 import com.webank.wedatasphere.linkis.filesystem.service.FsService;
 import com.webank.wedatasphere.linkis.filesystem.util.Constants;
@@ -34,7 +37,6 @@ import com.webank.wedatasphere.linkis.storage.FSFactory;
 import com.webank.wedatasphere.linkis.storage.LineMetaData;
 import com.webank.wedatasphere.linkis.storage.LineRecord;
 import com.webank.wedatasphere.linkis.storage.csv.CSVFsWriter;
-import com.webank.wedatasphere.linkis.storage.domain.Column;
 import com.webank.wedatasphere.linkis.storage.domain.FsPathListWithError;
 import com.webank.wedatasphere.linkis.storage.excel.ExcelFsWriter;
 import com.webank.wedatasphere.linkis.storage.excel.ExcelStorageReader;
@@ -43,7 +45,6 @@ import com.webank.wedatasphere.linkis.storage.resultset.ResultSetFactory;
 import com.webank.wedatasphere.linkis.storage.resultset.ResultSetFactory$;
 import com.webank.wedatasphere.linkis.storage.resultset.ResultSetReader;
 import com.webank.wedatasphere.linkis.storage.resultset.table.TableMetaData;
-import com.webank.wedatasphere.linkis.storage.resultset.table.TableRecord;
 import com.webank.wedatasphere.linkis.storage.script.*;
 import com.webank.wedatasphere.linkis.storage.utils.StorageUtils;
 import org.apache.commons.io.IOUtils;
@@ -70,10 +71,7 @@ import javax.ws.rs.core.Response;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 
 /**
@@ -383,7 +381,8 @@ public class FsRestfulApi implements FsRestfulRemote {
         fsValidate(fileSystem);
         return Message.messageToResponse(Message.ok().data("isExist", fileSystem.exists(fsPath)));
     }
-
+    @Autowired
+    private TextFileReader[] textFileReader;
     /**
      * @param req
      * @param path
@@ -410,141 +409,29 @@ public class FsRestfulApi implements FsRestfulRemote {
         FsPath fsPath = new FsPath(path);
         FileSystem fileSystem = fsService.getFileSystem(userName, fsPath);
         fsValidate(fileSystem);
-        if (StringUtils.isEmpty(page)) {
-            page = 1;
+        if (page == null) {
+            page = Pager$.MODULE$.defaultPage();
+        }
+        if(pageSize == null){
+            pageSize = Pager$.MODULE$.defaultPageSize();
         }
         //Throws an exception if the file does not have read access(如果文件没读权限，抛出异常)
         if (!fileSystem.canRead(fsPath)) {
             throw new WorkSpaceException("This user has no permission to read this file!");
         }
-        Object fileContent = null;
-        Integer totalLine = null;
-        Integer totalPage = 0;
-        String type = WorkspaceUtil.getOpenFileTypeByFileName(path);
-        if ("script".equals(type)) {
-            ScriptFsReader scriptFsReader = ScriptFsReader.getScriptFsReader(fsPath, StringUtils.isEmpty(charset) ? "utf-8" : charset, fileSystem.read(fsPath));
-            MetaData metaData = scriptFsReader.getMetaData();
-            ScriptMetaData scriptMetaData = (ScriptMetaData) metaData;
-            Variable[] variables = scriptMetaData.getMetaData();
-            StringBuilder stringBuilder = new StringBuilder();
-            List<String> recordList = new ArrayList<>();
-            Map<String, Object> params = VariableParser.getMap(variables);
-            while (scriptFsReader.hasNext()) {
-                ScriptRecord scriptRecord = (ScriptRecord) scriptFsReader.getRecord();
-                recordList.add(scriptRecord.getLine());
-            }
-            if (pageSize == null || pageSize >= recordList.size()) {
-                page = 1;
-                totalPage = 1;
-                for (int i = 0; i < recordList.size(); i++) {
-                    String r = recordList.get(i);
-                    if ("".equals(r)) {
-                        stringBuilder.append("\n");
-                    } else {
-                        if (i != recordList.size() - 1) {
-                            stringBuilder.append(r + "\n");
-                        } else {
-                            stringBuilder.append(r);
-                        }
-                    }
-                }
-            } else {
-                if (recordList.size() % pageSize == 0) {
-                    totalPage = recordList.size() / pageSize;
-                } else {
-                    totalPage = recordList.size() / pageSize + 1;
-                }
-                if (page >= totalPage) {
-                    page = totalPage;
-                    for (int i = (page - 1) * pageSize; i <= recordList.size() - 1; i++) {
-                        String r = recordList.get(i);
-                        if ("".equals(r)) {
-                            stringBuilder.append("\n");
-                        } else {
-                            if (i != recordList.size() - 1) {
-                                stringBuilder.append(r + "\n");
-                            } else {
-                                stringBuilder.append(r);
-                            }
-                        }
-                    }
-                } else {
-                    for (int i = (page - 1) * pageSize; i <= page * pageSize - 1; i++) {
-                        String r = recordList.get(i);
-                        if ("".equals(r)) {
-                            stringBuilder.append("\n");
-                        } else {
-                            if (i != page * pageSize - 1) {
-                                stringBuilder.append(r + "\n");
-                            } else {
-                                stringBuilder.append(r);
-                            }
-                        }
-                    }
-                }
-            }
-            totalLine = recordList.size();
-            fileContent = stringBuilder.toString();
-            scriptFsReader.close();
-            message.data("params", params);
-            message.data("type", "script/text");
-        } else if ("resultset".equals(type)) {
-            //返回metadata
-            ResultSetFactory instance = ResultSetFactory$.MODULE$.getInstance();
-            ResultSet<? extends MetaData, ? extends Record> resultSet = instance.getResultSetByPath(fsPath);
-            com.webank.wedatasphere.linkis.common.io.resultset.ResultSetReader<? extends MetaData, ? extends Record> resultSetReader = ResultSetReader.getResultSetReader(resultSet, fileSystem.read(fsPath));
-            MetaData metaData = resultSetReader.getMetaData();
-            if (StringUtils.isEmpty(pageSize)) {
-                pageSize = 5000;
-            }
-            page = 1;
-            Integer rowNum = 0;
-            if (metaData instanceof LineMetaData) {
-                LineMetaData lineMetaData = (LineMetaData) metaData;
-                message.data("metadata", lineMetaData.getMetaData());
-                StringBuilder stringBuilder = new StringBuilder();
-                for (int i = 0; i < pageSize; i++) {
-                    if (resultSetReader.hasNext()) {
-                        rowNum++;
-                        Record record = resultSetReader.getRecord();
-                        LineRecord lineRecord = (LineRecord) record;
-                        stringBuilder.append(lineRecord.getLine() + "\n");
-                    } else {
-                        break;
-                    }
-                }
-                fileContent = stringBuilder.toString();
-            } else if (metaData instanceof TableMetaData) {
-                List<String> resultsetMetaDataList = new ArrayList<>();
-                TableMetaData tableMetaData = (TableMetaData) metaData;
-                Column[] columns = tableMetaData.columns();
-                for (Column column : columns) {
-                    resultsetMetaDataList.add(column.toString());
-                }
-                message.data("metadata", resultsetMetaDataList);
-                List<ArrayList<String>> resultsetRow = new ArrayList<>();
-                for (int i = 0; i < pageSize; i++) {
-                    if (resultSetReader.hasNext()) {
-                        rowNum++;
-                        Record record = resultSetReader.getRecord();
-                        TableRecord tableRecord = (TableRecord) record;
-                        ArrayList<String> resulstsetColumn = new ArrayList<>();
-                        Object[] row = tableRecord.row();
-                        for (Object o : row) {
-                            resulstsetColumn.add(o == null ? "NULL" : o.toString());
-                        }
-                        resultsetRow.add(resulstsetColumn);
-                    } else {
-                        break;
-                    }
-                }
-                fileContent = resultsetRow;
-            }
-            totalLine = rowNum;
-            resultSetReader.close();
-            message.data("type", resultSet.resultSetType());
-        }
-        return Message.messageToResponse(message.data("page", page).data("totalLine", totalLine).data("totalPage", totalPage).data("fileContent", fileContent));
+        Optional<TextFileReader> textFileReaderOptional = Arrays.stream(this.textFileReader).filter(r -> r.canRead(path)).findFirst();
+        TextFileReader textFileReader = textFileReaderOptional.orElseThrow(()-> new WorkSpaceException("unsupported type!"));
+        Pager pager = textFileReader.getPager();
+        Map<String,String> parmas = new HashMap<String,String>();
+        parmas.put("page",page.toString());
+        parmas.put("pageSize",pageSize.toString());
+        parmas.put("charset",charset);
+        pager.startPage(fsPath,fileSystem,parmas);
+        message.data(pager.getHeaderKey(),pager.getHeader());
+        message.data("type",pager.getType());
+        message.data("fileContent",pager.getBody());
+        message.data("totalLine",pager.totalLine());
+        return Message.messageToResponse(message);
     }
 
 
