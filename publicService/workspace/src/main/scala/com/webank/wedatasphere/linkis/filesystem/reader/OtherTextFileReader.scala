@@ -1,8 +1,8 @@
 package com.webank.wedatasphere.linkis.filesystem.reader
 
-import java.io.InputStream
+import java.io.{BufferedReader, InputStream, InputStreamReader}
 
-import com.webank.wedatasphere.linkis.storage.script.{ScriptFsReader, ScriptRecord}
+import com.webank.wedatasphere.linkis.storage.script.ScriptRecord
 import org.apache.commons.io.IOUtils
 
 /**
@@ -18,10 +18,13 @@ class OtherTextFileReader extends TextFileReader {
   }
 
   def getLineBody(): Object = {
+    val isr = new InputStreamReader(is,params.getOrDefault("charset","utf-8"))
+    val br = new BufferedReader(isr)
     val recordList = new StringBuilder
-    while (reader.hasNext && ifContinueRead) {
-      val line = reader.getRecord.asInstanceOf[ScriptRecord].getLine
+    var line = br.readLine()
+    while (line!=null && ifContinueRead) {
       if (ifStartRead) recordList.append(line).append("\n")
+      line = br.readLine()
       count += 1
       totalLine += 1
     }
@@ -44,10 +47,8 @@ class OtherTextFileReader extends TextFileReader {
 
 
   override def getBody(): Object = {
-    if (reader == null) {
-      is = getFs().read(getFsPath())
-      reader = ScriptFsReader.getScriptFsReader(getFsPath(), params.getOrDefault("charset", "utf-8"), is)
-    }
+    if (is == null) is = getFs().read(getFsPath())
+
     if (getPagerModel() == PagerModel.Line) getLineBody() else getByteBody()
   }
 
@@ -56,11 +57,10 @@ class OtherTextFileReader extends TextFileReader {
 
   override def getHeaderKey: String = "metadata"
 
-  override def close(): Unit = IOUtils.closeQuietly(reader)
+  override def close(): Unit = IOUtils.closeQuietly(is)
 
 
   private var is: InputStream = _
-  private var reader: ScriptFsReader = _
 
 }
 
