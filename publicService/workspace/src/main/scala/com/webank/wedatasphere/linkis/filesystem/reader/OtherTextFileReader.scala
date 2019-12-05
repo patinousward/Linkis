@@ -55,9 +55,9 @@ class OtherTextFileReader extends TextFileReader {
   }
 
 
-  override def getReturnType: String = "script/text"
+  override def getReturnType(): String = "script/text"
 
-  override def getHeaderKey: String = "metadata"
+  override def getHeaderKey(): String = "metadata"
 
   override def close(): Unit = IOUtils.closeQuietly(is)
 
