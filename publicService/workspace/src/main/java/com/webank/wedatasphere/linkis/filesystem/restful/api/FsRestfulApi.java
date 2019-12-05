@@ -430,6 +430,7 @@ public class FsRestfulApi implements FsRestfulRemote {
         message.data("type",textFileReader.getReturnType());
         message.data("fileContent",textFileReader.getBody());
         message.data("totalLine",textFileReader.totalLine());
+        textFileReader.close();
         return Message.messageToResponse(message);
     }
 
