@@ -24,9 +24,9 @@ import com.webank.wedatasphere.linkis.common.io.resultset.ResultSet;
 import com.webank.wedatasphere.linkis.filesystem.conf.WorkSpaceConfiguration;
 import com.webank.wedatasphere.linkis.filesystem.entity.DirFileTree;
 import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException;
-import com.webank.wedatasphere.linkis.filesystem.reader.Pager;
-import com.webank.wedatasphere.linkis.filesystem.reader.Pager$;
+import com.webank.wedatasphere.linkis.filesystem.reader.PagerConstant;
 import com.webank.wedatasphere.linkis.filesystem.reader.TextFileReader;
+import com.webank.wedatasphere.linkis.filesystem.reader.TextFileReaderFactory;
 import com.webank.wedatasphere.linkis.filesystem.restful.remote.FsRestfulRemote;
 import com.webank.wedatasphere.linkis.filesystem.service.FsService;
 import com.webank.wedatasphere.linkis.filesystem.util.Constants;
@@ -71,7 +71,10 @@ import javax.ws.rs.core.Response;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 /**
@@ -381,8 +384,7 @@ public class FsRestfulApi implements FsRestfulRemote {
         fsValidate(fileSystem);
         return Message.messageToResponse(Message.ok().data("isExist", fileSystem.exists(fsPath)));
     }
-    @Autowired
-    private TextFileReader[] textFileReader;
+
     /**
      * @param req
      * @param path
@@ -410,27 +412,24 @@ public class FsRestfulApi implements FsRestfulRemote {
         FileSystem fileSystem = fsService.getFileSystem(userName, fsPath);
         fsValidate(fileSystem);
         if (page == null) {
-            page = Pager$.MODULE$.defaultPage();
+            page = PagerConstant.defaultPage();
         }
         if(pageSize == null){
-            pageSize = Pager$.MODULE$.defaultPageSize();
+            pageSize = PagerConstant.defaultPageSize();
         }
         //Throws an exception if the file does not have read access(如果文件没读权限，抛出异常)
         if (!fileSystem.canRead(fsPath)) {
             throw new WorkSpaceException("This user has no permission to read this file!");
         }
-        Optional<TextFileReader> textFileReaderOptional = Arrays.stream(this.textFileReader).filter(r -> r.canRead(path)).findFirst();
-        TextFileReader textFileReader = textFileReaderOptional.orElseThrow(()-> new WorkSpaceException("unsupported type!"));
-        Pager pager = textFileReader.getPager();
-        Map<String,String> parmas = new HashMap<String,String>();
-        parmas.put("page",page.toString());
-        parmas.put("pageSize",pageSize.toString());
-        parmas.put("charset",charset);
-        pager.startPage(fsPath,fileSystem,parmas);
-        message.data(pager.getHeaderKey(),pager.getHeader());
-        message.data("type",pager.getType());
-        message.data("fileContent",pager.getBody());
-        message.data("totalLine",pager.totalLine());
+        TextFileReader textFileReader = TextFileReaderFactory.get(path);
+        textFileReader.setFsPath(fsPath);
+        textFileReader.setFs(fileSystem);
+        textFileReader.params().put("charset",charset);
+        textFileReader.startPage(page,pageSize);
+        message.data(textFileReader.getHeaderKey(),textFileReader.getHeader());
+        message.data("type",textFileReader.getReturnType());
+        message.data("fileContent",textFileReader.getBody());
+        message.data("totalLine",textFileReader.totalLine());
         return Message.messageToResponse(message);
     }
 

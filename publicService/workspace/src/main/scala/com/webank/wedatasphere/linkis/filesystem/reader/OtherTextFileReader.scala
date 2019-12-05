@@ -1,15 +1,24 @@
 package com.webank.wedatasphere.linkis.filesystem.reader
 
-import org.springframework.stereotype.Component
-
 /**
   * .text,.csv
   */
-@Component
+
 class OtherTextFileReader extends TextFileReader {
+  override def getHeader(): AnyRef = ???
 
-  fileType = Array("txt","csv")
+  override def getBody(): AnyRef = ???
 
-  override def getPager(): Pager = new OtherPager
+  override def getReturnType: String = "script/text"
 
+  override def getHeaderKey: String = ???
+
+  override def close(): Unit = ???
+}
+
+object OtherTextFileReader extends TextFileReaderSelector {
+
+  fileType = Array("txt", "csv")
+
+  override def select(): TextFileReader = new OtherTextFileReader
 }

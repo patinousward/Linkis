@@ -1,15 +1,24 @@
 package com.webank.wedatasphere.linkis.filesystem.reader
 
-import org.springframework.stereotype.Component
-
 /**
   * .log
   */
-@Component
-class LogTextFileReader extends TextFileReader{
+
+class LogTextFileReader extends TextFileReader {
+  override def getHeader(): AnyRef = ???
+
+  override def getBody(): AnyRef = ???
+
+  override def getReturnType: String = ???
+
+  override def getHeaderKey: String = ???
+
+  override def close(): Unit = ???
+}
+
+object LogTextFileReader extends TextFileReaderSelector {
 
   fileType = Array("log")
 
-  override def getPager(): Pager = new LogPager
-
+  override def select(): TextFileReader = new LogTextFileReader
 }
