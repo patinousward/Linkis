@@ -1,5 +1,6 @@
 package com.webank.wedatasphere.linkis.filesystem.reader
 
+import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException
 import com.webank.wedatasphere.linkis.storage.script.{ScriptFsReader, ScriptMetaData, ScriptRecord, VariableParser}
 import org.apache.commons.io.IOUtils
 
@@ -9,11 +10,11 @@ import org.apache.commons.io.IOUtils
 
 class ScriptTextFileReader extends TextFileReader {
 
-  pagerTrigger = PagerTrigger.OFF
+  setPagerTrigger(PagerTrigger.OFF)
 
   override def getHeader(): Object = {
     if (reader == null) {
-      reader = ScriptFsReader.getScriptFsReader(fsPath, params.getOrDefault("charset", "utf-8"), fs.read(fsPath))
+      reader = ScriptFsReader.getScriptFsReader(getFsPath(), params.getOrDefault("charset", "utf-8"), getFs().read(getFsPath()))
     }
     val metadata = reader.getMetaData.asInstanceOf[ScriptMetaData]
     VariableParser.getMap(metadata.getMetaData)
@@ -32,13 +33,17 @@ class ScriptTextFileReader extends TextFileReader {
 
   private var reader: ScriptFsReader = _
 
-  override def getReturnType: String = "script/text"
+  override def getReturnType(): String = "script/text"
 
   override def close(): Unit = {
     IOUtils.closeQuietly(reader)
   }
 
-  override def getHeaderKey: String = "params"
+  override def setPagerModel(pagerModel: PagerModel.Value): Unit = {
+    throw new WorkSpaceException("scriptTextFileReader can not setting pageModel")
+  }
+
+  override def getHeaderKey(): String = "params"
 }
 
 object ScriptTextFileReader extends TextFileReaderSelector {

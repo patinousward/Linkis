@@ -4,10 +4,12 @@ import java.util
 
 import com.webank.wedatasphere.linkis.common.io.resultset.{ResultSet, ResultSetReader}
 import com.webank.wedatasphere.linkis.common.io.{MetaData, Record}
+import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException
 import com.webank.wedatasphere.linkis.storage.resultset.table.{TableMetaData, TableRecord}
 import com.webank.wedatasphere.linkis.storage.resultset.{ResultSetFactory, ResultSetReader}
 import com.webank.wedatasphere.linkis.storage.{LineMetaData, LineRecord}
 import org.apache.commons.io.IOUtils
+
 import scala.collection.JavaConversions._
 
 /**
@@ -18,8 +20,8 @@ class ResultSetTextFileReader extends TextFileReader {
 
   override def getHeader(): Object = {
     if (reader == null) {
-      resultSet = ResultSetFactory.getInstance.getResultSetByPath(fsPath)
-      reader = ResultSetReader.getResultSetReader(resultSet, fs.read(fsPath))
+      resultSet = ResultSetFactory.getInstance.getResultSetByPath(getFsPath())
+      reader = ResultSetReader.getResultSetReader(resultSet, getFs().read(getFsPath()))
     }
     reader.getMetaData match {
       case metadata: LineMetaData => metadata.getMetaData
@@ -60,11 +62,15 @@ class ResultSetTextFileReader extends TextFileReader {
   private var reader: ResultSetReader[_ <: MetaData, _ <: Record] = _
   private var resultSet: ResultSet[_ <: MetaData, _ <: Record] = _
 
-  override def getReturnType: String = resultSet.resultSetType()
+  override def getReturnType(): String = resultSet.resultSetType()
 
   override def close(): Unit = IOUtils.closeQuietly(reader)
 
-  override def getHeaderKey: String = "metadata"
+  override def setPagerModel(pagerModel: PagerModel.Value): Unit = {
+    throw new WorkSpaceException("scriptTextFileReader can not setting pageModel")
+  }
+
+  override def getHeaderKey(): String = "metadata"
 }
 
 object ResultSetTextFileReader extends TextFileReaderSelector {

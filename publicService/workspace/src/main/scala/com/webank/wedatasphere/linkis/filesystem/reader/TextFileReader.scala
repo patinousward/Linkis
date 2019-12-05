@@ -7,9 +7,7 @@ import com.webank.wedatasphere.linkis.common.io.FsPath
 import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException
 import com.webank.wedatasphere.linkis.storage.fs.FileSystem
 
-import scala.beans.BeanProperty
-
-trait TextFileReader extends Closeable{
+trait TextFileReader extends Closeable {
 
   protected var start: Int = 1
 
@@ -21,34 +19,53 @@ trait TextFileReader extends Closeable{
 
   var count = 1
 
-  @BeanProperty var pagerTrigger: PagerTrigger.Value =PagerTrigger.ON
+  private var pagerTrigger: PagerTrigger.Value = PagerTrigger.ON
 
-  protected def ifContinueRead:Boolean= f(count<=end)
+  def setPagerTrigger(pagerTrigger: PagerTrigger.Value): Unit = this.pagerTrigger = pagerTrigger
 
-  protected def ifStartRead:Boolean =f(count>=start)
+  def getPagerTrigger(): PagerTrigger.Value = this.pagerTrigger
+
+  private var pagerModel: PagerModel.Value = PagerModel.Line
+
+  def setPagerModel(pagerModel: PagerModel.Value): Unit = this.pagerModel = pagerModel
+
+  def getPagerModel(): PagerModel.Value = this.pagerModel
+
+  protected def ifContinueRead: Boolean = f(count <= end)
+
+  protected def ifStartRead: Boolean = f(count >= start)
 
   def startPage(page: Int, pageSize: Int): Unit = {
     if (pagerTrigger == PagerTrigger.OFF) return
     if (page <= 0 || pageSize <= 0)
       throw new WorkSpaceException("Illegal parameter:page and pageSize can not be empty or less than zero")
+    if(pageSize >PagerConstant.maxPageSize) throw new WorkSpaceException("pageSize is too large")
     start = (page - 1) * pageSize + 1
     end = pageSize * page
   }
 
-  @BeanProperty var fsPath:FsPath = _
+  private var fsPath: FsPath = _
 
-  @BeanProperty var fs:FileSystem = _
+  private var fs: FileSystem = _
 
-  var params = new util.HashMap[String,String]
+  def getFs(): FileSystem = this.fs
+
+  def setFs(fs: FileSystem): Unit = this.fs = fs
+
+  def getFsPath(): FsPath = this.fsPath
+
+  def setFsPath(fsPath: FsPath): Unit = this.fsPath = fsPath
+
+  var params = new util.HashMap[String, String]
 
   def getHeader(): Object
 
   def getBody(): Object
 
-  def getReturnType: String // TODO: 后面可以和前台统一一下
+  def getReturnType(): String // TODO: 后面可以和前台统一一下
 
-  def getHeaderKey: String // TODO: 后面可以和前台统一一下
+  def getHeaderKey(): String // TODO: 后面可以和前台统一一下
 
-  private val  f = (x:Boolean) =>if(pagerTrigger == PagerTrigger.OFF) true else x
+  private val f = (x: Boolean) => if (pagerTrigger == PagerTrigger.OFF) true else x
 
 }
