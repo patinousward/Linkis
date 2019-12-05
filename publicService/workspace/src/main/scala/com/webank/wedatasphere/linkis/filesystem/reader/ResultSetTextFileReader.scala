@@ -49,7 +49,7 @@ class ResultSetTextFileReader extends TextFileReader {
       count += 1
       totalLine += 1
     }
-    recordList.foldLeft("")((a, b) => a + "\n" + b)
+    recordList.foldLeft("")((a, b) => a + b + "\n")
   }
 
   override def getBody(): Object = {

@@ -20,7 +20,7 @@ class OtherTextFileReader extends TextFileReader {
   }
 
   def getLineBody(): Object = {
-    val isr = new InputStreamReader(is,"utf-8")
+    val isr = new InputStreamReader(is,params.getOrDefault("charset","utf-8"))
     val br = new BufferedReader(isr)
     val recordList = new StringBuilder
     var line = br.readLine()

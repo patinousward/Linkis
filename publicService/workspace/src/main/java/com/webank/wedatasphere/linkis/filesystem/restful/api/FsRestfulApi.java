@@ -417,6 +417,9 @@ public class FsRestfulApi implements FsRestfulRemote {
         if(pageSize == null){
             pageSize = PagerConstant.defaultPageSize();
         }
+        if(StringUtils.isEmpty(charset)){
+            charset = "utf-8";
+        }
         //Throws an exception if the file does not have read access(如果文件没读权限，抛出异常)
         if (!fileSystem.canRead(fsPath)) {
             throw new WorkSpaceException("This user has no permission to read this file!");
