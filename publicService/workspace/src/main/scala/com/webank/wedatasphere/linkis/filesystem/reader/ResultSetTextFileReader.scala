@@ -32,9 +32,9 @@ class ResultSetTextFileReader extends TextFileReader {
   def getTableResultSetBody(): Object = {
     val f = (x: Any) => if (x == null) "NULL" else x.toString
     val recordList = new util.ArrayList[Array[String]]()
-    while (reader.hasNext && count <= end) {
+    while (reader.hasNext && ifContinueRead) {
       val line = reader.getRecord.asInstanceOf[TableRecord].row.map(f)
-      if (count >= start) recordList.add(line)
+      if (ifStartRead) recordList.add(line)
       count += 1
       totalLine += 1
     }
