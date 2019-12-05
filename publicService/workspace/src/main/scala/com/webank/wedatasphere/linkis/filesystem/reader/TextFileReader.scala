@@ -39,7 +39,7 @@ trait TextFileReader extends Closeable {
     if (pagerTrigger == PagerTrigger.OFF) return
     if (page <= 0 || pageSize <= 0)
       throw new WorkSpaceException("Illegal parameter:page and pageSize can not be empty or less than zero")
-    if(pageSize >PagerConstant.maxPageSize) throw new WorkSpaceException("pageSize is too large")
+    if (pageSize > PagerConstant.maxPageSize) throw new WorkSpaceException("pageSize is too large")
     start = (page - 1) * pageSize + 1
     end = pageSize * page
   }

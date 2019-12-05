@@ -2,7 +2,6 @@ package com.webank.wedatasphere.linkis.filesystem.reader
 
 import java.io.{BufferedReader, InputStream, InputStreamReader}
 
-import com.webank.wedatasphere.linkis.storage.script.ScriptRecord
 import org.apache.commons.io.IOUtils
 
 /**
@@ -20,11 +19,11 @@ class OtherTextFileReader extends TextFileReader {
   }
 
   def getLineBody(): Object = {
-    val isr = new InputStreamReader(is,params.getOrDefault("charset","utf-8"))
+    val isr = new InputStreamReader(is, params.getOrDefault("charset", "utf-8"))
     val br = new BufferedReader(isr)
     val recordList = new StringBuilder
     var line = br.readLine()
-    while (line!=null && ifContinueRead) {
+    while (line != null && ifContinueRead) {
       if (ifStartRead) recordList.append(line).append("\n")
       line = br.readLine()
       count += 1
@@ -34,14 +33,14 @@ class OtherTextFileReader extends TextFileReader {
   }
 
   def getByteBody(): Object = {
-    is.skip((start-1)* multiplication)
+    is.skip((start - 1) * multiplication)
     //如果是开启分页，byte读取大小就是pageSize，如果没开启分页，byte读取大小就是默认2048
-    val bufferLength = if(getPagerTrigger() == PagerTrigger.ON) end - start + 1 else 2048
-    val buffer = new  Array[Byte](bufferLength*multiplication)
+    val bufferLength = if (getPagerTrigger() == PagerTrigger.ON) end - start + 1 else 2048
+    val buffer = new Array[Byte](bufferLength * multiplication)
     var readLength = 0
     val recordList = new StringBuilder
-    while(readLength!= -1 && f(count<=end*multiplication)){
-      recordList.append(new String(buffer,0,readLength))
+    while (readLength != -1 && f(count <= end * multiplication)) {
+      recordList.append(new String(buffer, 0, readLength))
       count += readLength
       readLength = is.read(buffer)
     }
