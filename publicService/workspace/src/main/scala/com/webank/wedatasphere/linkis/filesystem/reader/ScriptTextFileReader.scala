@@ -8,7 +8,7 @@ import org.apache.commons.io.IOUtils
   * sql,hql,mlsql,py,scala,python,r,out
   */
 
-class ScriptTextFileReader extends TextFileReader {
+class ScriptTextFileReader private extends TextFileReader {
 
   setPagerTrigger(PagerTrigger.OFF)
 

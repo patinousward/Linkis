@@ -8,7 +8,7 @@ import org.apache.commons.io.IOUtils
   * .text,.csv
   */
 
-class OtherTextFileReader extends TextFileReader {
+class OtherTextFileReader private extends TextFileReader {
 
   private var multiplication = 1024
 
