@@ -11,6 +11,8 @@ import org.apache.commons.io.IOUtils
 
 class OtherTextFileReader extends TextFileReader {
 
+  private var multiplication = 1024
+
   setPagerModel(PagerModel.Byte)
 
   override def getHeader(): Object = {
@@ -32,13 +34,13 @@ class OtherTextFileReader extends TextFileReader {
   }
 
   def getByteBody(): Object = {
-    is.skip(start-1)
+    is.skip((start-1)* multiplication)
     //如果是开启分页，byte读取大小就是pageSize，如果没开启分页，byte读取大小就是默认2048
     val bufferLength = if(getPagerTrigger() == PagerTrigger.ON) end - start + 1 else 2048
-    val buffer = new  Array[Byte](bufferLength*1024)
+    val buffer = new  Array[Byte](bufferLength*multiplication)
     var readLength = 0
     val recordList = new StringBuilder
-    while(readLength!= -1 && f(count<=end*1024)){
+    while(readLength!= -1 && f(count<=end*multiplication)){
       recordList.append(new String(buffer,0,readLength))
       count += readLength
       readLength = is.read(buffer)
