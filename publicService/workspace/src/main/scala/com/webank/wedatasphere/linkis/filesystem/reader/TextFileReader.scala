@@ -66,6 +66,6 @@ trait TextFileReader extends Closeable {
 
   def getHeaderKey(): String // TODO: 后面可以和前台统一一下
 
-  private val f = (x: Boolean) => if (pagerTrigger == PagerTrigger.OFF) true else x
+  protected val f = (x: Boolean) => if (pagerTrigger == PagerTrigger.OFF) true else x
 
 }
