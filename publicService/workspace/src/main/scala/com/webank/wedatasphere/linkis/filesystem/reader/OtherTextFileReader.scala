@@ -35,11 +35,12 @@ class OtherTextFileReader extends TextFileReader {
     is.skip(start-1)
     //如果是开启分页，byte读取大小就是pageSize，如果没开启分页，byte读取大小就是默认2048
     val bufferLength = if(getPagerTrigger() == PagerTrigger.ON) end - start + 1 else 2048
-    val buffer = new  Array[Byte](bufferLength * 1024)
+    val buffer = new  Array[Byte](bufferLength)
     var readLength = 0
     val recordList = new StringBuilder
-    while(readLength!= -1){
+    while(readLength!= -1 && ifContinueRead){
       recordList.append(new String(buffer,0,readLength))
+      count += readLength
       readLength = is.read(buffer)
     }
     recordList.toString()
