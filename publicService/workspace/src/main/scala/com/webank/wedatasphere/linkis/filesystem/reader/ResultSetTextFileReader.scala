@@ -54,7 +54,7 @@ class ResultSetTextFileReader private extends TextFileReader {
 
   override def getBody(): Object = {
     getReturnType() match {
-      case "2" => getTableResultSetBody()
+      case ResultSetFactory.TABLE_TYPE => getTableResultSetBody()
       case _ => getLineResultSetBody()
     }
   }
