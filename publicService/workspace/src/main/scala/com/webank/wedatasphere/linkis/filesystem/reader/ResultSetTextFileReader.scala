@@ -16,7 +16,7 @@ import scala.collection.JavaConversions._
   * .dolphin
   */
 
-class ResultSetTextFileReader private extends TextFileReader {
+class ResultSetTextFileReader extends TextFileReader {
 
   override def getHeader(): Object = {
     if (reader == null) {
