@@ -425,8 +425,7 @@ public class FsRestfulApi implements FsRestfulRemote {
             throw new WorkSpaceException("This user has no permission to read this file!");
         }
         TextFileReader textFileReader = TextFileReaderFactory.get(path);
-        textFileReader.setFsPath(fsPath);
-        textFileReader.setIs(fileSystem.read(fsPath));
+        textFileReader.setFsPath(fsPath).setIs(fileSystem.read(fsPath));
         textFileReader.params().put("charset",charset);
         textFileReader.startPage(page,pageSize);
         message.data(textFileReader.getHeaderKey(),textFileReader.getHeader());

@@ -85,4 +85,16 @@ trait TextFileReader extends Closeable {
 
   protected val f = (x: Boolean) => if (pagerTrigger == PagerTrigger.OFF) true else x
 
+  private var lineShuffle: LineShuffle = new LineShuffle {}
+
+  def setLineShuffle(lineShuffle: LineShuffle): TextFileReader = {
+    this.lineShuffle = lineShuffle
+    this
+  }
+
+  def getLineShuffle(): LineShuffle = {
+    if (this.lineShuffle == null) throw new WorkSpaceException("line shuffle can not be empty")
+    this.lineShuffle
+  }
+
 }
