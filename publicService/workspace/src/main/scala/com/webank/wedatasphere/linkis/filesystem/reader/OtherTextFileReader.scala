@@ -24,10 +24,9 @@ class OtherTextFileReader extends TextFileReader {
     val recordList = new StringBuilder
     var line = br.readLine()
     while (line != null && ifContinueRead) {
-      if (ifStartRead) recordList.append(getLineShuffle().shuffle(line)).append("\n")
+      if (ifStartRead) recordList.append(getLineShuffle().shuffle(line)).append("\n");totalLine += 1
       line = br.readLine()
       count += 1
-      totalLine += 1
     }
     recordList.toString()
   }
@@ -35,11 +34,12 @@ class OtherTextFileReader extends TextFileReader {
   def getByteBody(): Object = {
     getIs().skip((start - 1) * multiplication)
     //如果是开启分页，byte读取大小就是pageSize，如果没开启分页，byte读取大小就是默认2048
-    val bufferLength = if (getPagerTrigger() == PagerTrigger.ON) end - start + 1 else 2048
+    val pageSize = end - start + 1
+    val bufferLength = if (getPagerTrigger() == PagerTrigger.ON) pageSize else 2048
     val buffer = new Array[Byte](bufferLength * multiplication)
     var readLength = 0
     val recordList = new StringBuilder
-    while (readLength != -1 && f(count <= end * multiplication)) {
+    while (readLength != -1 && f(count <= pageSize * multiplication)) {
       recordList.append(new String(buffer, 0, readLength))
       count += readLength
       totalLine += readLength

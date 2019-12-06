@@ -33,9 +33,8 @@ class ResultSetTextFileReader extends TextFileReader {
     val recordList = new util.ArrayList[Array[String]]()
     while (reader.hasNext && ifContinueRead) {
       val line = reader.getRecord.asInstanceOf[TableRecord].row
-      if (ifStartRead) recordList.add(getLineShuffle().shuffle(line))
+      if (ifStartRead) recordList.add(getLineShuffle().shuffle(line));totalLine += 1
       count += 1
-      totalLine += 1
     }
     recordList
   }
@@ -44,9 +43,8 @@ class ResultSetTextFileReader extends TextFileReader {
     val recordList = new util.ArrayList[String]()
     while (reader.hasNext && ifContinueRead) {
       val line = reader.getRecord.asInstanceOf[LineRecord].getLine
-      if (ifStartRead) recordList.add(getLineShuffle().shuffle(line))
+      if (ifStartRead) recordList.add(getLineShuffle().shuffle(line));totalLine += 1
       count += 1
-      totalLine += 1
     }
     recordList.foldLeft("")((a, b) => a + b + "\n")
   }

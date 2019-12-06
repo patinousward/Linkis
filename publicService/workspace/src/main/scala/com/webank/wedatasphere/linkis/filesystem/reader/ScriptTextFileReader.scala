@@ -24,9 +24,8 @@ class ScriptTextFileReader extends TextFileReader {
     val recordList = new StringBuilder
     while (reader.hasNext && ifContinueRead) {
       val line = reader.getRecord.asInstanceOf[ScriptRecord].getLine
-      if (ifStartRead) recordList.append(getLineShuffle().shuffle(line)).append("\n")
+      if (ifStartRead) recordList.append(getLineShuffle().shuffle(line)).append("\n");totalLine += 1
       count += 1
-      totalLine += 1
     }
     recordList.toString()
   }
