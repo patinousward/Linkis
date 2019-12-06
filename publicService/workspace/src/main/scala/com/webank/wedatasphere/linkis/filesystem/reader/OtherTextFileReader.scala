@@ -1,6 +1,6 @@
 package com.webank.wedatasphere.linkis.filesystem.reader
 
-import java.io.{BufferedReader, InputStream, InputStreamReader}
+import java.io.{BufferedReader, InputStreamReader}
 
 import org.apache.commons.io.IOUtils
 
@@ -19,7 +19,7 @@ class OtherTextFileReader extends TextFileReader {
   }
 
   def getLineBody(): Object = {
-    val isr = new InputStreamReader(is, params.getOrDefault("charset", "utf-8"))
+    val isr = new InputStreamReader(getIs(), params.getOrDefault("charset", "utf-8"))
     val br = new BufferedReader(isr)
     val recordList = new StringBuilder
     var line = br.readLine()
@@ -33,7 +33,7 @@ class OtherTextFileReader extends TextFileReader {
   }
 
   def getByteBody(): Object = {
-    is.skip((start - 1) * multiplication)
+    getIs().skip((start - 1) * multiplication)
     //如果是开启分页，byte读取大小就是pageSize，如果没开启分页，byte读取大小就是默认2048
     val bufferLength = if (getPagerTrigger() == PagerTrigger.ON) end - start + 1 else 2048
     val buffer = new Array[Byte](bufferLength * multiplication)
@@ -42,15 +42,14 @@ class OtherTextFileReader extends TextFileReader {
     while (readLength != -1 && f(count <= end * multiplication)) {
       recordList.append(new String(buffer, 0, readLength))
       count += readLength
-      readLength = is.read(buffer)
+      totalLine += readLength
+      readLength = getIs().read(buffer)
     }
     recordList.toString()
   }
 
 
   override def getBody(): Object = {
-    if (is == null) is = getFs().read(getFsPath())
-
     if (getPagerModel() == PagerModel.Line) getLineBody() else getByteBody()
   }
 
@@ -59,10 +58,8 @@ class OtherTextFileReader extends TextFileReader {
 
   override def getHeaderKey(): String = "metadata"
 
-  override def close(): Unit = IOUtils.closeQuietly(is)
+  override def close(): Unit = IOUtils.closeQuietly(getIs())
 
-
-  private var is: InputStream = _
 
 }
 

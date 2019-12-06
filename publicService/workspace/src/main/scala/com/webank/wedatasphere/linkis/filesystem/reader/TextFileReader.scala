@@ -1,11 +1,10 @@
 package com.webank.wedatasphere.linkis.filesystem.reader
 
-import java.io.Closeable
+import java.io.{Closeable, InputStream}
 import java.util
 
 import com.webank.wedatasphere.linkis.common.io.FsPath
 import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException
-import com.webank.wedatasphere.linkis.storage.fs.FileSystem
 
 trait TextFileReader extends Closeable {
 
@@ -17,7 +16,7 @@ trait TextFileReader extends Closeable {
 
   var totalLine = 0
 
-  var count = 1
+  protected var count = 1
 
   private var pagerTrigger: PagerTrigger.Value = PagerTrigger.ON
 
@@ -35,6 +34,12 @@ trait TextFileReader extends Closeable {
 
   protected def ifStartRead: Boolean = f(count >= start)
 
+  /**
+    * the method does not take effect when pagetrigger is off
+    *
+    * @param page
+    * @param pageSize
+    */
   def startPage(page: Int, pageSize: Int): Unit = {
     if (pagerTrigger == PagerTrigger.OFF) return
     if (page <= 0 || pageSize <= 0)
@@ -46,15 +51,27 @@ trait TextFileReader extends Closeable {
 
   private var fsPath: FsPath = _
 
-  private var fs: FileSystem = _
+  private var is: InputStream = _
 
-  def getFs(): FileSystem = this.fs
+  def getIs(): InputStream = {
+    if (this.is == null) throw new WorkSpaceException("inputstream cannot be null")
+    this.is
+  }
 
-  def setFs(fs: FileSystem): Unit = this.fs = fs
+  def setIs(is: InputStream): TextFileReader = {
+    this.is = is
+    this
+  }
 
-  def getFsPath(): FsPath = this.fsPath
+  def getFsPath(): FsPath = {
+    if (this.fsPath == null) throw new WorkSpaceException("fsPath cannot be null")
+    this.fsPath
+  }
 
-  def setFsPath(fsPath: FsPath): Unit = this.fsPath = fsPath
+  def setFsPath(fsPath: FsPath): TextFileReader = {
+    this.fsPath = fsPath
+    this
+  }
 
   var params = new util.HashMap[String, String]
 

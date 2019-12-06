@@ -14,7 +14,7 @@ class ScriptTextFileReader extends TextFileReader {
 
   override def getHeader(): Object = {
     if (reader == null) {
-      reader = ScriptFsReader.getScriptFsReader(getFsPath(), params.getOrDefault("charset", "utf-8"), getFs().read(getFsPath()))
+      reader = ScriptFsReader.getScriptFsReader(getFsPath(), params.getOrDefault("charset", "utf-8"), getIs())
     }
     val metadata = reader.getMetaData.asInstanceOf[ScriptMetaData]
     VariableParser.getMap(metadata.getMetaData)

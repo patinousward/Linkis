@@ -21,7 +21,7 @@ class ResultSetTextFileReader extends TextFileReader {
   override def getHeader(): Object = {
     if (reader == null) {
       resultSet = ResultSetFactory.getInstance.getResultSetByPath(getFsPath())
-      reader = ResultSetReader.getResultSetReader(resultSet, getFs().read(getFsPath()))
+      reader = ResultSetReader.getResultSetReader(resultSet, getIs())
     }
     reader.getMetaData match {
       case metadata: LineMetaData => metadata.getMetaData
