@@ -54,7 +54,7 @@ trait TextFileReader extends Closeable {
   private var is: InputStream = _
 
   def getIs(): InputStream = {
-    if (this.is == null) throw new WorkSpaceException("inputstream cannot be null")
+    if (this.is == null) throw new WorkSpaceException("inputstream cannot be empty")
     this.is
   }
 
@@ -64,7 +64,7 @@ trait TextFileReader extends Closeable {
   }
 
   def getFsPath(): FsPath = {
-    if (this.fsPath == null) throw new WorkSpaceException("fsPath cannot be null")
+    if (this.fsPath == null) throw new WorkSpaceException("fsPath cannot be empty")
     this.fsPath
   }
 

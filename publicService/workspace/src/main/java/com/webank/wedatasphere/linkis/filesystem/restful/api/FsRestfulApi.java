@@ -426,7 +426,7 @@ public class FsRestfulApi implements FsRestfulRemote {
         }
         TextFileReader textFileReader = TextFileReaderFactory.get(path);
         textFileReader.setFsPath(fsPath);
-        textFileReader.setFs(fileSystem);
+        textFileReader.setIs(fileSystem.read(fsPath));
         textFileReader.params().put("charset",charset);
         textFileReader.startPage(page,pageSize);
         message.data(textFileReader.getHeaderKey(),textFileReader.getHeader());
