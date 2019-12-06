@@ -120,4 +120,8 @@ trait TextFileReader extends Closeable {
     this.lineShuffle
   }
 
+  override def close(): Unit = {
+    getLineShuffle().close()
+  }
+
 }

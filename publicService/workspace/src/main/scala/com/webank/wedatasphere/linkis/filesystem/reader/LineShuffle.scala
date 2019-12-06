@@ -15,10 +15,12 @@
  */
 package com.webank.wedatasphere.linkis.filesystem.reader
 
+import java.io.Closeable
+
 /**
   * Created by patinousward
   */
-trait LineShuffle {
+trait LineShuffle  extends Closeable{
 
   def shuffleHead(line:String):String = line
 
@@ -30,5 +32,7 @@ trait LineShuffle {
     val f = (x: Any) => if (x == null) "NULL" else x.toString
     line.map(f)
   }
+
+  override def close(): Unit = {}
 
 }

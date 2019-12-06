@@ -19,14 +19,15 @@ package com.webank.wedatasphere.linkis.filesystem.restful.api;
 
 import com.webank.wedatasphere.linkis.common.io.FsPath;
 import com.webank.wedatasphere.linkis.common.io.MetaData;
-import com.webank.wedatasphere.linkis.common.io.Record;
-import com.webank.wedatasphere.linkis.common.io.resultset.ResultSet;
 import com.webank.wedatasphere.linkis.filesystem.conf.WorkSpaceConfiguration;
 import com.webank.wedatasphere.linkis.filesystem.entity.DirFileTree;
 import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException;
 import com.webank.wedatasphere.linkis.filesystem.reader.PagerConstant;
+import com.webank.wedatasphere.linkis.filesystem.reader.PagerTrigger;
 import com.webank.wedatasphere.linkis.filesystem.reader.TextFileReader;
 import com.webank.wedatasphere.linkis.filesystem.reader.TextFileReaderFactory;
+import com.webank.wedatasphere.linkis.filesystem.reader.shuffle.CSVLineShuffle;
+import com.webank.wedatasphere.linkis.filesystem.reader.shuffle.ExcelLineShuffle;
 import com.webank.wedatasphere.linkis.filesystem.restful.remote.FsRestfulRemote;
 import com.webank.wedatasphere.linkis.filesystem.service.FsService;
 import com.webank.wedatasphere.linkis.filesystem.util.Constants;
@@ -34,21 +35,14 @@ import com.webank.wedatasphere.linkis.filesystem.util.WorkspaceUtil;
 import com.webank.wedatasphere.linkis.server.Message;
 import com.webank.wedatasphere.linkis.server.security.SecurityFilter;
 import com.webank.wedatasphere.linkis.storage.FSFactory;
-import com.webank.wedatasphere.linkis.storage.LineMetaData;
-import com.webank.wedatasphere.linkis.storage.LineRecord;
-import com.webank.wedatasphere.linkis.storage.csv.CSVFsWriter;
 import com.webank.wedatasphere.linkis.storage.domain.FsPathListWithError;
-import com.webank.wedatasphere.linkis.storage.excel.ExcelFsWriter;
 import com.webank.wedatasphere.linkis.storage.excel.ExcelStorageReader;
 import com.webank.wedatasphere.linkis.storage.fs.FileSystem;
 import com.webank.wedatasphere.linkis.storage.resultset.ResultSetFactory;
 import com.webank.wedatasphere.linkis.storage.resultset.ResultSetFactory$;
-import com.webank.wedatasphere.linkis.storage.resultset.ResultSetReader;
-import com.webank.wedatasphere.linkis.storage.resultset.table.TableMetaData;
 import com.webank.wedatasphere.linkis.storage.script.*;
 import com.webank.wedatasphere.linkis.storage.utils.StorageUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.poi.ss.usermodel.Workbook;
 import org.codehaus.jackson.JsonNode;
 import org.glassfish.jersey.media.multipart.FormDataBodyPart;
 import org.glassfish.jersey.media.multipart.FormDataContentDisposition;
@@ -498,14 +492,8 @@ public class FsRestfulApi implements FsRestfulRemote {
             @QueryParam("outputFileType") String outputFileType,
             @QueryParam("outputFileName") String outputFileName) throws WorkSpaceException, IOException {
         InputStream inputStream = null;
-        ByteArrayOutputStream os = null;
         ServletOutputStream outputStream = null;
-        FileSystem fileSystem = null;
-        CSVFsWriter csvfsWriter = null;
-        ExcelFsWriter excelFsWriter = null;
-        Integer index = 0;
-        boolean isLimitDownloadSize = WorkSpaceConfiguration.RESULT_SET_DOWNLOAD_IS_LIMIT.getValue();
-        com.webank.wedatasphere.linkis.common.io.resultset.ResultSetReader<? extends MetaData, ? extends Record> resultSetReader = null;
+        TextFileReader textFileReader = null;
         try {
             if (StringUtils.isEmpty(charset)) {
                 charset = "utf-8";
@@ -521,67 +509,40 @@ public class FsRestfulApi implements FsRestfulRemote {
                 throw new WorkSpaceException("Path(路径)：" + path + "is empty(为空)！");
             }
             WorkspaceUtil.pathSafeCheck(path,userName);
-            String type = WorkspaceUtil.getOpenFileTypeByFileName(path);
-            if (!"resultset".equals(type)) {
-                throw new WorkSpaceException("unsupported type");
-            }
             FsPath fsPath = new FsPath(path);
-            fileSystem = fsService.getFileSystem(userName, fsPath);
+            FileSystem fileSystem = fsService.getFileSystem(userName, fsPath);
             fsValidate(fileSystem);
             response.setCharacterEncoding(charset);
-            ResultSetFactory instance = ResultSetFactory$.MODULE$.getInstance();
-            ResultSet<? extends MetaData, ? extends Record> resultSet = instance.getResultSetByPath(fsPath);
-            resultSetReader = ResultSetReader.getResultSetReader(resultSet, fileSystem.read(fsPath));
-            MetaData metaData = resultSetReader.getMetaData();
-            if ("csv".equals(outputFileType)) {
-                response.addHeader("Content-Type", "text/plain");
-                csvfsWriter = CSVFsWriter.getCSVFSWriter(charset, Constants.CSVDEFAULTSEPARATOR);
-                if (metaData instanceof TableMetaData) {
-                    TableMetaData tableMetaData = (TableMetaData) metaData;
-                    csvfsWriter.addMetaData(tableMetaData);
-                    while (resultSetReader.hasNext() && (!isLimitDownloadSize || index < WorkSpaceConfiguration.RESULT_SET_DOWNLOAD_MAX_SIZE_CSV.getValue())) {
-                        index +=1;
-                        csvfsWriter.addRecord(resultSetReader.getRecord());
-                    }
-                    inputStream = csvfsWriter.getCSVStream();
-                } else {
-                    StringBuilder stringBuilder = new StringBuilder();
-                    LineMetaData lineMetaData = (LineMetaData) metaData;
-                    if ("NULL".equals(lineMetaData)) {
-                        stringBuilder.append(lineMetaData.getMetaData());
-                        stringBuilder.append("\n");
-                    }
-                    while (resultSetReader.hasNext() && (!isLimitDownloadSize || index < WorkSpaceConfiguration.RESULT_SET_DOWNLOAD_MAX_SIZE_CSV.getValue())) {
-                        index +=1;
-                        LineRecord lineRecord = (LineRecord) resultSetReader.getRecord();
-                        stringBuilder.append(lineRecord.getLine());
-                        stringBuilder.append("\n");
-                    }
-                    inputStream = new ByteArrayInputStream(stringBuilder.toString().getBytes());
-                }
-            } else if ("xlsx".equals(outputFileType)) {
-                if (!(metaData instanceof TableMetaData)) {
-                    throw new WorkSpaceException("Only the result set of the table type can be converted to excel!(只有table类型的结果集能转为excel!)");
-                }
-                TableMetaData tableMetaData = (TableMetaData) metaData;
-                response.addHeader("Content-Type", Constants.XLSXRESPONSE);
-                excelFsWriter = ExcelFsWriter.getExcelFsWriter(Constants.FILEDEFAULTCHARSET, Constants.DEFAULTSHEETNAME, Constants.DEFAULTDATETYPE);
-                excelFsWriter.addMetaData(tableMetaData);
-                while (resultSetReader.hasNext() && (!isLimitDownloadSize || index < WorkSpaceConfiguration.RESULT_SET_DOWNLOAD_MAX_SIZE_EXCEL.getValue())) {
-                    index +=1;
-                    excelFsWriter.addRecord(resultSetReader.getRecord());
-                }
-                Workbook workBook = excelFsWriter.getWorkBook();
-                os = new ByteArrayOutputStream();
-                workBook.write(os);
-                byte[] content = os.toByteArray();
-                inputStream = new ByteArrayInputStream(content);
-            } else {
-                throw new WorkSpaceException("unsupported type");
+            textFileReader = TextFileReaderFactory.get(path);
+            // TODO: 2019/12/6 是否是resultset textFileReader
+            textFileReader.setFsPath(fsPath).setIs(fileSystem.read(fsPath));
+            if(!WorkSpaceConfiguration.RESULT_SET_DOWNLOAD_IS_LIMIT.getValue()){
+                textFileReader.setPagerTrigger(PagerTrigger.OFF());
+            }
+            switch (outputFileType){
+                case "csv":
+                    response.addHeader("Content-Type", "text/plain");
+                    CSVLineShuffle csvLineShuffle = new CSVLineShuffle(charset,Constants.CSVDEFAULTSEPARATOR);
+                    textFileReader.setLineShuffle(csvLineShuffle);
+                    textFileReader.startPage(1,WorkSpaceConfiguration.RESULT_SET_DOWNLOAD_MAX_SIZE_CSV.getValue());
+                    textFileReader.getHeader();
+                    textFileReader.getBody();
+                    inputStream = csvLineShuffle.getDownloadInputStream();
+                    break;
+                case "xlsx":
+                    response.addHeader("Content-Type", Constants.XLSXRESPONSE);
+                    ExcelLineShuffle excelLineShuffle = new ExcelLineShuffle(Constants.FILEDEFAULTCHARSET, Constants.DEFAULTSHEETNAME, Constants.DEFAULTDATETYPE);
+                    textFileReader.setLineShuffle(excelLineShuffle);
+                    textFileReader.startPage(1,WorkSpaceConfiguration.RESULT_SET_DOWNLOAD_MAX_SIZE_EXCEL.getValue());
+                    textFileReader.getHeader();
+                    // TODO: 2019/12/6 只支持table结果集
+                    textFileReader.getBody();
+                    inputStream = excelLineShuffle.getDownloadInputStream();
+                    break;
+                default:throw new WorkSpaceException("unsupported type,can not download");
             }
             response.addHeader("Content-Disposition", "attachment;filename="
                     + new String(outputFileName.getBytes("UTF-8"), "ISO8859-1") + "." + outputFileType);
-
             outputStream = response.getOutputStream();
             byte[] buffer = new byte[1024];
             int bytesRead = 0;
@@ -601,17 +562,9 @@ public class FsRestfulApi implements FsRestfulRemote {
             if (outputStream != null) {
                 outputStream.flush();
             }
-            StorageUtils.close(outputStream, inputStream, null);
-            StorageUtils.close(os);
-            if (csvfsWriter != null) {
-                csvfsWriter.close();
-            }
-            if (excelFsWriter != null) {
-                excelFsWriter.close();
-            }
-            if (resultSetReader != null) {
-                resultSetReader.close();
-            }
+            IOUtils.closeQuietly(outputStream);
+            IOUtils.closeQuietly(inputStream);
+            IOUtils.closeQuietly(textFileReader);
         }
     }
 

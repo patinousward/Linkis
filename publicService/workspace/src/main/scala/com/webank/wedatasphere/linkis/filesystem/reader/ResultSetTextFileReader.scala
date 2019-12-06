@@ -84,7 +84,10 @@ class ResultSetTextFileReader extends TextFileReader {
 
   override def getReturnType(): String = resultSet.resultSetType()
 
-  override def close(): Unit = IOUtils.closeQuietly(reader)
+  override def close(): Unit = {
+    IOUtils.closeQuietly(reader)
+    super.close();
+  }
 
   override def setPagerModel(pagerModel: PagerModel.Value): TextFileReader = {
     throw new WorkSpaceException("scriptTextFileReader can not setting pageModel")

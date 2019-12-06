@@ -56,6 +56,7 @@ class ScriptTextFileReader extends TextFileReader {
 
   override def close(): Unit = {
     IOUtils.closeQuietly(reader)
+    super.close()
   }
 
   override def setPagerModel(pagerModel: PagerModel.Value): TextFileReader = {

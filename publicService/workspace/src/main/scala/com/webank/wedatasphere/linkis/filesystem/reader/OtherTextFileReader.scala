@@ -77,7 +77,10 @@ class OtherTextFileReader extends TextFileReader {
 
   override def getHeaderKey(): String = "metadata"
 
-  override def close(): Unit = IOUtils.closeQuietly(getIs())
+  override def close(): Unit = {
+    IOUtils.closeQuietly(getIs())
+    super.close()
+  }
 
 
 }
