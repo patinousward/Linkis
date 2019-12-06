@@ -24,7 +24,10 @@ class OtherTextFileReader extends TextFileReader {
     val recordList = new StringBuilder
     var line = br.readLine()
     while (line != null && ifContinueRead) {
-      if (ifStartRead) recordList.append(getLineShuffle().shuffle(line)).append("\n");totalLine += 1
+      if (ifStartRead) {
+        recordList.append(getLineShuffle().shuffle(line)).append("\n")
+        totalLine += 1
+      }
       line = br.readLine()
       count += 1
     }
