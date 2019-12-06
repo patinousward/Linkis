@@ -41,8 +41,8 @@ class ResultSetTextFileReader extends TextFileReader {
       reader = ResultSetReader.getResultSetReader(resultSet, getIs())
     }
     reader.getMetaData match {
-      case metadata: LineMetaData => metadata.getMetaData
-      case metadata: TableMetaData => metadata.columns.map(_.toString)
+      case metadata: LineMetaData => getLineShuffle().shuffleHead(metadata.getMetaData)
+      case metadata: TableMetaData => getLineShuffle().shuffleHead(metadata.columns.map(_.toString))
     }
   }
 
@@ -51,7 +51,7 @@ class ResultSetTextFileReader extends TextFileReader {
     while (reader.hasNext && ifContinueRead) {
       val line = reader.getRecord.asInstanceOf[TableRecord].row
       if (ifStartRead) {
-        recordList.add(getLineShuffle().shuffle(line))
+        recordList.add(getLineShuffle().shuffleBody(line))
         totalLine += 1
       }
       count += 1
@@ -64,7 +64,7 @@ class ResultSetTextFileReader extends TextFileReader {
     while (reader.hasNext && ifContinueRead) {
       val line = reader.getRecord.asInstanceOf[LineRecord].getLine
       if (ifStartRead) {
-        recordList.add(getLineShuffle().shuffle(line))
+        recordList.add(getLineShuffle().shuffleBody(line))
         totalLine += 1
       }
       count += 1

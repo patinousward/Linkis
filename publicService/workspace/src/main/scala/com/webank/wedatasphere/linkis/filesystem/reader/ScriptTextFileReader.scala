@@ -34,7 +34,7 @@ class ScriptTextFileReader extends TextFileReader {
       reader = ScriptFsReader.getScriptFsReader(getFsPath(), params.getOrDefault("charset", "utf-8"), getIs())
     }
     val metadata = reader.getMetaData.asInstanceOf[ScriptMetaData]
-    VariableParser.getMap(metadata.getMetaData)
+    getLineShuffle().shuffleHead(VariableParser.getMap(metadata.getMetaData))
   }
 
   override def getBody(): Object = {
@@ -42,7 +42,7 @@ class ScriptTextFileReader extends TextFileReader {
     while (reader.hasNext && ifContinueRead) {
       val line = reader.getRecord.asInstanceOf[ScriptRecord].getLine
       if (ifStartRead) {
-        recordList.append(getLineShuffle().shuffle(line)).append("\n")
+        recordList.append(getLineShuffle().shuffleBody(line)).append("\n")
         totalLine += 1
       }
       count += 1

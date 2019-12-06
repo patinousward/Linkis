@@ -31,7 +31,7 @@ class OtherTextFileReader extends TextFileReader {
   setPagerModel(PagerModel.Byte)
 
   override def getHeader(): Object = {
-    null
+    getLineShuffle().shuffleHead(null)
   }
 
   def getLineBody(): Object = {
@@ -41,7 +41,7 @@ class OtherTextFileReader extends TextFileReader {
     var line = br.readLine()
     while (line != null && ifContinueRead) {
       if (ifStartRead) {
-        recordList.append(getLineShuffle().shuffle(line)).append("\n")
+        recordList.append(getLineShuffle().shuffleBody(line)).append("\n")
         totalLine += 1
       }
       line = br.readLine()
