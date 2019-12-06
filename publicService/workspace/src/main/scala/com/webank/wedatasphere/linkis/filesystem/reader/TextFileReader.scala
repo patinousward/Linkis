@@ -20,13 +20,19 @@ trait TextFileReader extends Closeable {
 
   private var pagerTrigger: PagerTrigger.Value = PagerTrigger.ON
 
-  def setPagerTrigger(pagerTrigger: PagerTrigger.Value): Unit = this.pagerTrigger = pagerTrigger
+  def setPagerTrigger(pagerTrigger: PagerTrigger.Value): TextFileReader = {
+    this.pagerTrigger = pagerTrigger
+    this
+  }
 
   def getPagerTrigger(): PagerTrigger.Value = this.pagerTrigger
 
   private var pagerModel: PagerModel.Value = PagerModel.Line
 
-  def setPagerModel(pagerModel: PagerModel.Value): Unit = this.pagerModel = pagerModel
+  def setPagerModel(pagerModel: PagerModel.Value): TextFileReader = {
+    this.pagerModel = pagerModel
+    this
+  }
 
   def getPagerModel(): PagerModel.Value = this.pagerModel
 
