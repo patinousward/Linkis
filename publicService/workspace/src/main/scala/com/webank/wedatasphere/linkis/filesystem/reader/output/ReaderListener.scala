@@ -13,23 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.webank.wedatasphere.linkis.filesystem.reader.output
 
-package com.webank.wedatasphere.linkis.filesystem.page
+import java.io.Closeable
 
-import java.util
+import com.webank.wedatasphere.linkis.common.listener.Event
 
 /**
-  * Created by johnnwang on 2019/4/17.
+  * Created by patinousward
   */
-class TablePageHelper(bodyP: util.ArrayList[util.ArrayList[String]], paramsP: util.HashMap[String, String]) extends AbstractPageHelper(bodyP, paramsP) {
+trait ReaderListener extends Closeable {
 
-  def startPage() = {
-    body.subList(fromIndex, toIndex)
-  }
+  def onReadHead(readerEvent: ReaderEvent): Unit
 
-  override def init(): Unit = {
-    commonInit(body.size())
-  }
+  def onReadBody(readerEvent: ReaderEvent): Unit
 
 }
 
+case class ReaderEvent(content: Object, params: java.util.Map[String, String] = null) extends Event

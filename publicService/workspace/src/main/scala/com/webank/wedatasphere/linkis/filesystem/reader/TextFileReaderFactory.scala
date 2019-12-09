@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package com.webank.wedatasphere.linkis.filesystem.reader
 
-package com.webank.wedatasphere.linkis.filesystem.page
-
-import java.util
+import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException
 
 /**
-  * Created by johnnwang on 2019/4/17.
+  * Created by patinousward
   */
-trait PageHelper {
-  protected var fromIndex:Int
-  protected var toIndex:Int
-  protected var body:util.ArrayList[util.ArrayList[String]]
-  protected var params: util.HashMap[String, String]
-  var totalPage:Int
-  def init:Unit
+object TextFileReaderFactory {
+
+  private val array = Array[TextFileReaderSelector](ScriptTextFileReader, ResultSetTextFileReader, OtherTextFileReader)
+
+  def get(path: String): TextFileReader = {
+    array.find(_.canRead(path)).getOrElse(throw new WorkSpaceException("unsupported file type!can not open it")).select()
+  }
+
 }

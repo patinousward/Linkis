@@ -13,31 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.webank.wedatasphere.linkis.filesystem.reader
 
-import java.util
-
-import com.webank.wedatasphere.linkis.common.io.{FsPath, FsReader, MetaData, Record}
-import com.webank.wedatasphere.linkis.storage.fs.FileSystem
-
 /**
-  * Created by johnnwang on 2019/4/16.
+  * Created by patinousward
   */
-trait FileReader {
-  protected var fsReader: FsReader[MetaData, Record]
+trait TextFileReaderSelector {
 
-  protected var kind: String
+  def canRead(path: String): Boolean = f(path, fileType)
 
-  def init(fileSystem: FileSystem, fsPath: FsPath, params: util.HashMap[String, String]): Unit
+  protected var fileType: Array[String] = Array.empty
 
-  def getHead: util.HashMap[String, Object]
+  private val f = (x: String, y: Array[String]) => y.exists(ft => x.endsWith("." + ft))
 
-  /**
-    * Expansion of this piece needs to be optimized(扩容这块需要优化下)
-    *
-    * @return
-    */
-  def getBody: util.ArrayList[util.ArrayList[String]]
-
+  def select(): TextFileReader
 }

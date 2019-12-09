@@ -1,0 +1,36 @@
+/*
+ * Copyright 2019 WeBank
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.webank.wedatasphere.linkis.filesystem.reader
+
+/**
+  * Created by patinousward
+  */
+object PagerTrigger extends Enumeration {
+  type SourceType = Value
+  val ON, OFF = Value
+}
+
+object PagerModel extends Enumeration {
+  type SourceType = Value
+  val Line, Byte = Value
+}
+
+object PagerConstant {
+  var defaultPage = 1
+  var defaultPageSize = 5000
+  var maxPageSize = 5000
+  var resultsetType = "resultsetType"
+}

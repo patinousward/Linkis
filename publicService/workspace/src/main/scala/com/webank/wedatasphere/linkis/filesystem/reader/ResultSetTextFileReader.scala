@@ -1,0 +1,97 @@
+/*
+ * Copyright 2019 WeBank
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package com.webank.wedatasphere.linkis.filesystem.reader
+
+import java.util
+
+import com.webank.wedatasphere.linkis.common.io.resultset.{ResultSet, ResultSetReader}
+import com.webank.wedatasphere.linkis.common.io.{MetaData, Record}
+import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException
+import com.webank.wedatasphere.linkis.filesystem.reader.output.ReaderEvent
+import com.webank.wedatasphere.linkis.storage.resultset.table.{TableMetaData, TableRecord}
+import com.webank.wedatasphere.linkis.storage.resultset.{ResultSetFactory, ResultSetReader}
+import com.webank.wedatasphere.linkis.storage.{LineMetaData, LineRecord}
+import org.apache.commons.io.IOUtils
+
+import scala.collection.JavaConversions._
+
+/**
+  * Created by patinousward
+  */
+class ResultSetTextFileReader private extends TextFileReader {
+
+  override def readHead(): Unit = {
+    if (reader == null) {
+      resultSet = ResultSetFactory.getInstance.getResultSetByPath(getFsPath())
+      reader = ResultSetReader.getResultSetReader(resultSet, getIs())
+    }
+    val eventparams = new util.HashMap[String, String]
+    eventparams += PagerConstant.resultsetType -> resultSet.resultSetType()
+    reader.getMetaData match {
+      case metadata: LineMetaData => readerListeners.foreach(_.onReadHead(ReaderEvent(metadata.getMetaData, eventparams)))
+      case metadata: TableMetaData => readerListeners.foreach(_.onReadHead(ReaderEvent(metadata.columns, eventparams)))
+    }
+  }
+
+  def getTableResultSetBody(): Unit = {
+    while (reader.hasNext && ifContinueRead) {
+      val line = reader.getRecord.asInstanceOf[TableRecord].row
+      if (ifStartRead) {
+        readerListeners.foreach(_.onReadBody(ReaderEvent(line)))
+        totalLine += 1
+      }
+      count += 1
+    }
+  }
+
+  def getLineResultSetBody(): Unit = {
+    while (reader.hasNext && ifContinueRead) {
+      val line = reader.getRecord.asInstanceOf[LineRecord].getLine
+      if (ifStartRead) {
+        readerListeners.foreach(_.onReadBody(ReaderEvent(line)))
+        totalLine += 1
+      }
+      count += 1
+    }
+  }
+
+  override def readBody(): Unit = {
+    resultSet.resultSetType() match {
+      case ResultSetFactory.TABLE_TYPE => getTableResultSetBody()
+      case _ => getLineResultSetBody()
+    }
+  }
+
+  private var reader: ResultSetReader[_ <: MetaData, _ <: Record] = _
+  private var resultSet: ResultSet[_ <: MetaData, _ <: Record] = _
+
+  override def close(): Unit = {
+    IOUtils.closeQuietly(reader)
+    super.close();
+  }
+
+  override def setPagerModel(pagerModel: PagerModel.Value): TextFileReader = {
+    throw new WorkSpaceException("scriptTextFileReader can not setting pageModel")
+  }
+
+}
+
+object ResultSetTextFileReader extends TextFileReaderSelector {
+
+  fileType = Array("dolphin")
+
+  override def select(): TextFileReader = new ResultSetTextFileReader
+}
