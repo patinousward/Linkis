@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 package com.webank.wedatasphere.linkis.filesystem.reader
+
 /**
   * Created by patinousward
   */
@@ -31,4 +32,5 @@ object PagerConstant {
   var defaultPage = 1
   var defaultPageSize = 5000
   var maxPageSize = 5000
+  var resultsetType = "resultsetType"
 }

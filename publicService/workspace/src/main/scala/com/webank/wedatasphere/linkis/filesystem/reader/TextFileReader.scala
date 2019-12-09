@@ -20,6 +20,11 @@ import java.util
 
 import com.webank.wedatasphere.linkis.common.io.FsPath
 import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException
+import com.webank.wedatasphere.linkis.filesystem.reader.listener.ReaderListener
+import org.apache.commons.io.IOUtils
+
+import scala.collection.JavaConversions._
+
 /**
   * Created by patinousward
   */
@@ -28,8 +33,6 @@ trait TextFileReader extends Closeable {
   protected var start: Int = 1
 
   protected var end: Int = -1
-
-  var totalPage = 1
 
   var totalLine = 0
 
@@ -42,7 +45,7 @@ trait TextFileReader extends Closeable {
     this
   }
 
-  def getPagerTrigger(): PagerTrigger.Value = this.pagerTrigger
+  protected def getPagerTrigger(): PagerTrigger.Value = this.pagerTrigger
 
   private var pagerModel: PagerModel.Value = PagerModel.Line
 
@@ -51,7 +54,7 @@ trait TextFileReader extends Closeable {
     this
   }
 
-  def getPagerModel(): PagerModel.Value = this.pagerModel
+  protected def getPagerModel(): PagerModel.Value = this.pagerModel
 
   protected def ifContinueRead: Boolean = f(count <= end)
 
@@ -63,13 +66,16 @@ trait TextFileReader extends Closeable {
     * @param page
     * @param pageSize
     */
-  def startPage(page: Int, pageSize: Int): Unit = {
-    if (pagerTrigger == PagerTrigger.OFF) return
-    if (page <= 0 || pageSize <= 0)
-      throw new WorkSpaceException("Illegal parameter:page and pageSize can not be empty or less than zero")
-    if (pageSize > PagerConstant.maxPageSize) throw new WorkSpaceException(s"pageSize is too large,limit is ${PagerConstant.maxPageSize}")
-    start = (page - 1) * pageSize + 1
-    end = pageSize * page
+  def startRead(page: Int, pageSize: Int): Unit = {
+    if (pagerTrigger == PagerTrigger.ON) {
+      if (page <= 0 || pageSize <= 0)
+        throw new WorkSpaceException("Illegal parameter:page and pageSize can not be empty or less than zero")
+      if (pageSize > PagerConstant.maxPageSize) throw new WorkSpaceException(s"pageSize is too large,limit is ${PagerConstant.maxPageSize}")
+      start = (page - 1) * pageSize + 1
+      end = pageSize * page
+    }
+    readHead()
+    readBody()
   }
 
   private var fsPath: FsPath = _
@@ -98,30 +104,21 @@ trait TextFileReader extends Closeable {
 
   var params = new util.HashMap[String, String]
 
-  def getHeader(): Object
+  protected def readHead(): Unit
 
-  def getBody(): Object
-
-  def getReturnType(): String // TODO: 后面可以和前台统一一下
-
-  def getHeaderKey(): String // TODO: 后面可以和前台统一一下
+  protected def readBody(): Unit
 
   protected val f = (x: Boolean) => if (pagerTrigger == PagerTrigger.OFF) true else x
 
-  private var lineShuffle: LineShuffle = new LineShuffle {}
+  protected val readerListeners = new util.ArrayList[ReaderListener]()
 
-  def setLineShuffle(lineShuffle: LineShuffle): TextFileReader = {
-    this.lineShuffle = lineShuffle
+  def register(readerListener: ReaderListener): TextFileReader = {
+    readerListeners.add(readerListener)
     this
   }
 
-  def getLineShuffle(): LineShuffle = {
-    if (this.lineShuffle == null) throw new WorkSpaceException("line shuffle can not be empty")
-    this.lineShuffle
-  }
-
   override def close(): Unit = {
-    getLineShuffle().close()
+    readerListeners.foreach(IOUtils.closeQuietly)
   }
 
 }

@@ -13,26 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.webank.wedatasphere.linkis.filesystem.reader
+package com.webank.wedatasphere.linkis.filesystem.reader.listener
 
 import java.io.Closeable
+
+import com.webank.wedatasphere.linkis.common.listener.Event
 
 /**
   * Created by patinousward
   */
-trait LineShuffle  extends Closeable{
+trait ReaderListener extends Closeable {
 
-  def shuffleHead(line:String):String = line
+  def onReadHead(readerEvent: ReaderEvent): Unit
 
-  def shuffleBody(line: String): String = line
-
-  def shuffleHead(line:Object):Object = line
-
-  def shuffleBody(line: Array[Any]): Array[String] = {
-    val f = (x: Any) => if (x == null) "NULL" else x.toString
-    line.map(f)
-  }
-
-  override def close(): Unit = {}
+  def onReadBody(readerEvent: ReaderEvent): Unit
 
 }
+
+case class ReaderEvent(content: Object,params:java.util.Map[String,String] = null) extends Event

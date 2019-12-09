@@ -20,6 +20,7 @@ import java.util
 import com.webank.wedatasphere.linkis.common.io.resultset.{ResultSet, ResultSetReader}
 import com.webank.wedatasphere.linkis.common.io.{MetaData, Record}
 import com.webank.wedatasphere.linkis.filesystem.exception.WorkSpaceException
+import com.webank.wedatasphere.linkis.filesystem.reader.listener.ReaderEvent
 import com.webank.wedatasphere.linkis.storage.resultset.table.{TableMetaData, TableRecord}
 import com.webank.wedatasphere.linkis.storage.resultset.{ResultSetFactory, ResultSetReader}
 import com.webank.wedatasphere.linkis.storage.{LineMetaData, LineRecord}
@@ -28,52 +29,47 @@ import org.apache.commons.io.IOUtils
 import scala.collection.JavaConversions._
 
 /**
-  * .dolphin
-  */
-/**
   * Created by patinousward
   */
-class ResultSetTextFileReader extends TextFileReader {
+class ResultSetTextFileReader private extends TextFileReader {
 
-  override def getHeader(): Object = {
+  override def readHead(): Unit = {
     if (reader == null) {
       resultSet = ResultSetFactory.getInstance.getResultSetByPath(getFsPath())
       reader = ResultSetReader.getResultSetReader(resultSet, getIs())
     }
+    val eventparams = new util.HashMap[String,String]
+    eventparams += PagerConstant.resultsetType-> resultSet.resultSetType()
     reader.getMetaData match {
-      case metadata: LineMetaData => getLineShuffle().shuffleHead(metadata.getMetaData)
-      case metadata: TableMetaData => getLineShuffle().shuffleHead(metadata.columns.map(_.toString))
+      case metadata: LineMetaData => readerListeners.foreach(_.onReadHead(ReaderEvent(metadata.getMetaData,eventparams)))
+      case metadata: TableMetaData => readerListeners.foreach(_.onReadHead(ReaderEvent(metadata.columns,eventparams)))
     }
   }
 
-  def getTableResultSetBody(): Object = {
-    val recordList = new util.ArrayList[Array[String]]()
+  def getTableResultSetBody(): Unit = {
     while (reader.hasNext && ifContinueRead) {
       val line = reader.getRecord.asInstanceOf[TableRecord].row
       if (ifStartRead) {
-        recordList.add(getLineShuffle().shuffleBody(line))
+        readerListeners.foreach(_.onReadBody(ReaderEvent(line)))
         totalLine += 1
       }
       count += 1
     }
-    recordList
   }
 
-  def getLineResultSetBody(): Object = {
-    val recordList = new util.ArrayList[String]()
+  def getLineResultSetBody(): Unit = {
     while (reader.hasNext && ifContinueRead) {
       val line = reader.getRecord.asInstanceOf[LineRecord].getLine
       if (ifStartRead) {
-        recordList.add(getLineShuffle().shuffleBody(line))
+        readerListeners.foreach(_.onReadBody(ReaderEvent(line)))
         totalLine += 1
       }
       count += 1
     }
-    recordList.foldLeft("")((a, b) => a + b + "\n")
   }
 
-  override def getBody(): Object = {
-    getReturnType() match {
+  override def readBody(): Unit = {
+    resultSet.resultSetType() match {
       case ResultSetFactory.TABLE_TYPE => getTableResultSetBody()
       case _ => getLineResultSetBody()
     }
@@ -81,8 +77,6 @@ class ResultSetTextFileReader extends TextFileReader {
 
   private var reader: ResultSetReader[_ <: MetaData, _ <: Record] = _
   private var resultSet: ResultSet[_ <: MetaData, _ <: Record] = _
-
-  override def getReturnType(): String = resultSet.resultSetType()
 
   override def close(): Unit = {
     IOUtils.closeQuietly(reader)
@@ -93,7 +87,6 @@ class ResultSetTextFileReader extends TextFileReader {
     throw new WorkSpaceException("scriptTextFileReader can not setting pageModel")
   }
 
-  override def getHeaderKey(): String = "metadata"
 }
 
 object ResultSetTextFileReader extends TextFileReaderSelector {
