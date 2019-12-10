@@ -134,8 +134,11 @@ private[rpc] class RPCReceiveRestful extends RPCReceiveRemote with Logging {
   @Path("receive")
   @POST
   override def receive(message: Message): Message = catchIt {
+    //封装反序列化message
     val obj = RPCConsumer.getRPCConsumer.toObject(message)
+    //封装为RPCMessageEvent
     val event = RPCMessageEvent(obj, BaseRPCSender.getInstanceInfo(message.getData))
+    //这里接受对方发送的异步请求，放入rpcReceiverListenerBus
     rpcReceiverListenerBus.post(event)
   }
 
