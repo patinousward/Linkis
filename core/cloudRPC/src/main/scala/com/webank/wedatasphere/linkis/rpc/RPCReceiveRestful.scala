@@ -134,6 +134,7 @@ private[rpc] class RPCReceiveRestful extends RPCReceiveRemote with Logging {
   @Path("receive")
   @POST
   override def receive(message: Message): Message = catchIt {
+    //catchIt 也是之前restfulApi中的aop用的，主要作用是封装异常为message对象
     //封装反序列化message
     val obj = RPCConsumer.getRPCConsumer.toObject(message)
     //封装为RPCMessageEvent
@@ -145,16 +146,21 @@ private[rpc] class RPCReceiveRestful extends RPCReceiveRemote with Logging {
   private def receiveAndReply(message: Message, opEvent: (Receiver, Any, Sender) => Message): Message = catchIt {
     val obj = RPCConsumer.getRPCConsumer.toObject(message)
     val serviceInstance = BaseRPCSender.getInstanceInfo(message.getData)
+    //这里封装一层event的主要原因也还是利用隐式转换
     val event = RPCMessageEvent(obj, serviceInstance)
     event.map(opEvent(_, obj, event)).getOrElse(RPCProduct.getRPCProduct.notFound())
   }
 
   @Path("receiveAndReply")
   @POST
+  //这里接受对方发送的同步请求，因为jersey这里请求是同步的，所以要等信息返回了才返回，实现了同步
+  //函数_.receiveAndReply(_, _)最后会被调用 最终传递到自身服务的Receiver的方法中
   override def receiveAndReply(message: Message): Message = receiveAndReply(message, _.receiveAndReply(_, _))
 
   @Path("replyInMills")
   @POST
+  //这里接受对方发送的超时同步请求，jersey这里请求是同步的，但是传入了Duration对象，可以自行操控何时返回
+  //函数_.receiveAndReply(_, timeout, _)最后会被调用 最终传递到自身服务的Receiver的方法中
   override def receiveAndReplyInMills(message: Message): Message = catchIt {
     val duration = message.getData.get("duration")
     if(duration == null || StringUtils.isEmpty(duration.toString)) throw new DWCURIException(10002, "The timeout period is not set!(超时时间未设置！)")
