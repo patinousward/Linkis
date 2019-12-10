@@ -93,6 +93,9 @@ private[rpc] class RPCReceiveRestful extends RPCReceiveRemote with Logging {
         case _: BroadcastProtocol =>
         case _ =>
           //这里能调用fold主要是用了隐式转换，event被转化为自身服务的receiver line：60
+          //_.receive 说明这里是处理异步的，receive方法没有返回值，通过参数中sender返回
+          //这里event放入_.receive的方法中也是使用了隐式转换 line：62
+          //event中的instance信息是发送方的，这里会将这个信息封装为新的Sender作为参数传入
           event.fold(warn(s"cannot find a receiver to deal $event."))(_.receive(event.message, event))
       }
       override def onMessageEventError(event: RPCMessageEvent, t: Throwable): Unit =

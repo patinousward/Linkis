@@ -29,6 +29,6 @@ trait ReceiverSenderBuilder {
 
 class CommonReceiverSenderBuilder extends ReceiverSenderBuilder {
   override val order: Int = Int.MaxValue
-
+  //将发送方过来的event中获取serviceInstance信息，重新封装为一个Sender，这样可以用这个Sender进行回复消息，至于是异步还是同步由自己决定
   override def build(event: RPCMessageEvent): Option[Sender] = Some(Sender.getSender(event.serviceInstance))
 }
