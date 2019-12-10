@@ -92,6 +92,7 @@ private[rpc] class RPCReceiveRestful extends RPCReceiveRemote with Logging {
       override def onEvent(event: RPCMessageEvent): Unit = event.message match {
         case _: BroadcastProtocol =>
         case _ =>
+          //这里能调用fold主要是用了隐式转换，event被转化为自身服务的receiver line：60
           event.fold(warn(s"cannot find a receiver to deal $event."))(_.receive(event.message, event))
       }
       override def onMessageEventError(event: RPCMessageEvent, t: Throwable): Unit =
@@ -102,12 +103,15 @@ private[rpc] class RPCReceiveRestful extends RPCReceiveRemote with Logging {
     //启动listenerbus
     rpcReceiverListenerBus.start()
   }
-
+  //实现了BroadcastListener的类被RPCMessageEventListener封装一层，通过listener中循环调用的特性，实现了广播这种特性
+  //所有的broadcastListeners 一共有3种实现，一种是上面的1对1（非BroadcastProtocol），一种是BroadcastProtocol
+  //这种listener的实现都会处理protocol 继承了BroadcastProtocol的类，从而实现广播的特性
   private def addBroadcastListener(broadcastListener: BroadcastListener): Unit = if(rpcReceiverListenerBus != null) {
     info("add a new RPCBroadcastListener => " + broadcastListener.getClass)
     rpcReceiverListenerBus.addListener(new RPCMessageEventListener {
       val listenerName = broadcastListener.getClass.getSimpleName
       override def onEvent(event: RPCMessageEvent): Unit = event.message match {
+          //这里用匿名类可以方便传入方法中的broadcastListener参数
         case broadcastProtocol: BroadcastProtocol => broadcastListener.onBroadcastEvent(broadcastProtocol, event)
         case _ =>
       }
