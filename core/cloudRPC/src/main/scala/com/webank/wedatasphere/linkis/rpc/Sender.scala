@@ -70,8 +70,10 @@ object Sender {
   private val serviceInstanceToSenders = new util.HashMap[ServiceInstance, Sender]
   def getSender(applicationName: String): Sender = getSender(ServiceInstance(applicationName, null))
   def getSender(serviceInstance: ServiceInstance): Sender = {
+    //publicService 和 filesystem等的转化
     if(RPCConfiguration.ENABLE_PUBLIC_SERVICE.getValue && RPCConfiguration.PUBLIC_SERVICE_LIST.contains(serviceInstance.getApplicationName))
       serviceInstance.setApplicationName(RPCConfiguration.PUBLIC_SERVICE_APPLICATION_NAME.getValue)
+    //new SpringMVCRPCSender  并且把对象放入serviceInstanceToSenders缓存，下次直接从缓存中取对象
     if(!serviceInstanceToSenders.containsKey(serviceInstance)) serviceInstanceToSenders synchronized {
       if(!serviceInstanceToSenders.containsKey(serviceInstance))
         serviceInstanceToSenders.put(serviceInstance, new SpringMVCRPCSender(serviceInstance))

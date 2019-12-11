@@ -33,16 +33,18 @@ import org.springframework.context.annotation.{Configuration, Import}
   * Created by enjoyyin on 2019/1/14.
   */
 @Import(Array(classOf[FeignClientsConfiguration]))
-@Autowired
+//import 后，可以使用这个configuration的单例类，通过autowire的方式（所以这里构造器要标注autowire）或者getBean（class）的方式，主要是获取client（LoadBalancerFeignClient），Encoder，Decoder和Contract
+//？？LoadBalancerFeignClient 可能在openFeigen中有自己的单例，这里要看下feign的源码
+@Autowired//其实是类似标注在构造器上，为了注入构造器中的所有参数
 @Configuration
-@AutoConfigureBefore(Array(classOf[Receiver], classOf[RPCReceiveRestful]))
+@AutoConfigureBefore(Array(classOf[Receiver], classOf[RPCReceiveRestful]))//在这两个单例前加载这个类
 class SpringCloudFeignConfigurationCache(encoder: Encoder, decoder: Decoder,
                                          contract: Contract, client: Client) {
 
   @Autowired
-  private var discoveryClient: DiscoveryClient = _
+  private var discoveryClient: DiscoveryClient = _////这里的话可能会有没注入的问题，所以下面需要判断空值
   @Autowired
-  private var clientFactory: SpringClientFactory = _
+  private var clientFactory: SpringClientFactory = _//这里的话可能会有没注入的问题，所以下面需要判断空值
   @Autowired(required = false)
   private var loadBalancedRetryFactory: LoadBalancedRetryFactory = _
 

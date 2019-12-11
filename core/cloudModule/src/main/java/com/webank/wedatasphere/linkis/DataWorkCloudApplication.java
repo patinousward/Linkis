@@ -146,6 +146,9 @@ public class DataWorkCloudApplication extends SpringBootServletInitializer {
     }
 
     private static void initDWCApplication() {
+        //启动的时候从配置上获取到当前服务名applicationName 和端口
+        //获取当前的计算机的ip地址
+        //封装为serviceInstance对象，供rpc使用
         serviceInstance = new ServiceInstance();
         serviceInstance.setApplicationName(applicationContext.getEnvironment().getProperty("spring.application.name"));
         serviceInstance.setInstance(Utils.getComputerName() + ":" + applicationContext.getEnvironment().getProperty("server.port"));

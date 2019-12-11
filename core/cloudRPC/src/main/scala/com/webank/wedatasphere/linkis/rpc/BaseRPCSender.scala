@@ -66,7 +66,7 @@ private[rpc] class BaseRPCSender extends Sender with Logging {
 
   private def newRPC: RPCReceiveRemote = {
     val builder = Feign.builder
-    doBuilder(builder)
+    doBuilder(builder)//这里doBuilder用的是子类SpringMVCSender中的实现
     var url = if(name.startsWith("http://")) name else "http://" + name
     if(url.endsWith("/")) url = url.substring(0, url.length - 1)
     url += ServerConfiguration.BDP_SERVER_RESTFUL_URI.getValue
@@ -81,14 +81,18 @@ private[rpc] class BaseRPCSender extends Sender with Logging {
   }
 
   override def ask(message: Any): Any = execute(message){
+    //将message 转成json，并且标记类名，封装为Message对象
     val msg = RPCProduct.getRPCProduct.toMessage(message)
+    //message 中继续放入服务名（application-name 和instance对象）
     BaseRPCSender.addInstanceInfo(msg.getData)
+    //获取一个RPCReceiveRemote对象（单例）
     val response = getRPC.receiveAndReply(msg)
     RPCConsumer.getRPCConsumer.toObject(response)
   }
 
   override def ask(message: Any, timeout: Duration): Any = execute(message){
     val msg = RPCProduct.getRPCProduct.toMessage(message)
+    //比起无超时的对象，多了一步放入duration时间
     msg.data("duration", timeout.toMillis)
     BaseRPCSender.addInstanceInfo(msg.getData)
     val response = getRPC.receiveAndReply(msg)
