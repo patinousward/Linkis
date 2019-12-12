@@ -42,9 +42,9 @@ class SpringCloudFeignConfigurationCache(encoder: Encoder, decoder: Decoder,
                                          contract: Contract, client: Client) {
 
   @Autowired
-  private var discoveryClient: DiscoveryClient = _////这里的话可能会有没注入的问题，所以下面需要判断空值
+  private var discoveryClient: DiscoveryClient = _
   @Autowired
-  private var clientFactory: SpringClientFactory = _//这里的话可能会有没注入的问题，所以下面需要判断空值
+  private var clientFactory: SpringClientFactory = _
   @Autowired(required = false)
   private var loadBalancedRetryFactory: LoadBalancedRetryFactory = _
 
@@ -74,6 +74,7 @@ private[linkis] object SpringCloudFeignConfigurationCache {
   private[rpc] def getDecoder = decoder
   private[rpc] def getContract = contract
   private[rpc] def getClient = {
+    //静态类先于对象加载，这个判断空是为了避免在容器生成前直接使用，下面的也同理
     if(client == null) DataWorkCloudApplication.getApplicationContext.getBean(classOf[SpringCloudFeignConfigurationCache])
     client
   }
