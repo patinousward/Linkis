@@ -80,7 +80,7 @@ private[rpc] class SpringMVCRPCSender private[rpc](private[rpc] val serviceInsta
             instance.orElse(Option(SpringMVCRPCSender.this.serviceInstance)).filter(s => StringUtils.isNotBlank(s.getInstance))
               .foreach { serviceInstance =>
                 val server = RPCSpringBeanCache.getRPCServerLoader.getServer(getLoadBalancer, serviceInstance)
-                builder.withServer(server)
+                builder.withServer(server)//如果有指定server，就覆盖掉相应的
               }
           }
         }

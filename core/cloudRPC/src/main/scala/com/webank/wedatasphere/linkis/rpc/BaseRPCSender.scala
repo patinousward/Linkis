@@ -72,6 +72,9 @@ private[rpc] class BaseRPCSender extends Sender with Logging {
     url += ServerConfiguration.BDP_SERVER_RESTFUL_URI.getValue
     //封装url，指定类，那么进行方法调用的时候，就会发送到那个类上的相应的请求地址上
     builder.target(classOf[RPCReceiveRemote], url)
+    //builder中client正常情况下是使用@FeignClient注解实现的
+    //target方法可能是返回一个RPCReceiveRemote的代理对象
+    //直接使用服务名就可以访问的原因  https://www.jianshu.com/p/2a3965049f77
   }
 
   private def execute(message: Any)(op: => Any): Any = message match {

@@ -41,6 +41,9 @@ import org.springframework.context.annotation.{Configuration, Import}
 class SpringCloudFeignConfigurationCache(encoder: Encoder, decoder: Decoder,
                                          contract: Contract, client: Client) {
 
+  //默认注入的client在DefaultFeignLoadBalancedConfiguration类中有写明
+  //
+
   @Autowired
   private var discoveryClient: DiscoveryClient = _
   @Autowired
