@@ -70,10 +70,12 @@ private[rpc] class BaseRPCSender extends Sender with Logging {
     var url = if(name.startsWith("http://")) name else "http://" + name
     if(url.endsWith("/")) url = url.substring(0, url.length - 1)
     url += ServerConfiguration.BDP_SERVER_RESTFUL_URI.getValue
+    //封装url，指定类，那么进行方法调用的时候，就会发送到那个类上的相应的请求地址上
     builder.target(classOf[RPCReceiveRemote], url)
   }
 
   private def execute(message: Any)(op: => Any): Any = message match {
+      //如果实体是Protocol，则其返回结果还需要经过interceptor的处理
     case protocol: Protocol if getRPCInterceptors.nonEmpty =>
       val rpcInterceptorChain = createRPCInterceptorChain()
       rpcInterceptorChain.handle(createRPCInterceptorExchange(protocol, op))
@@ -87,6 +89,7 @@ private[rpc] class BaseRPCSender extends Sender with Logging {
     BaseRPCSender.addInstanceInfo(msg.getData)
     //获取一个RPCReceiveRemote对象（单例）
     val response = getRPC.receiveAndReply(msg)
+    //response反序列化
     RPCConsumer.getRPCConsumer.toObject(response)
   }
 
@@ -107,7 +110,7 @@ private[rpc] class BaseRPCSender extends Sender with Logging {
       case _: BoxedUnit =>
     }
   }
-
+//getRPC.receive直接让feign发送请求即可
   override def send(message: Any): Unit = sendIt(message, getRPC.receive)
 
 
