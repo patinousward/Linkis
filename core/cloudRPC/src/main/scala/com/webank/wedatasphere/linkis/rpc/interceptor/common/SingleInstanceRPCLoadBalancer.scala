@@ -36,6 +36,8 @@ class SingleInstanceRPCLoadBalancer extends RPCLoadBalancer with Logging {
       if(StringUtils.isEmpty(originService.getInstance)) synchronized {
         if(StringUtils.isEmpty(originService.getInstance)) {
           val servers = lb.getAllServers
+          //如果originService.getInstance为空（Sender.getSencer（applicationName）的话，确实是空的）
+          // 则从Allservers中随意选取一个作为originServer的instance信息
           val server = servers.get((math.random * servers.size()).toInt)
           originService.setInstance(server.getHostPort)
           warn(originService.getApplicationName + " choose " + server.getHostPort + " to build a single instance connection.")

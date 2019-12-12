@@ -44,30 +44,37 @@ private[rpc] class SpringMVCRPCSender private[rpc](private[rpc] val serviceInsta
   override protected def getRPCInterceptors: Array[RPCInterceptor] = RPCSpringBeanCache.getRPCInterceptors
 
   override protected def createRPCInterceptorChain() = new ServiceInstanceRPCInterceptorChain(0, getRPCInterceptors, serviceInstance)
-
+  //getRPCLoadBalancers 这里是自己定义的rpc负载均衡，默认有2个
   protected def getRPCLoadBalancers: Array[RPCLoadBalancer] = RPCSpringBeanCache.getRPCLoadBalancers
 
   override protected def doBuilder(builder: Feign.Builder): Unit = {
     val client = getClient.asInstanceOf[LoadBalancerFeignClient]
+    //用旧的client的Delegate重新封装一个LoadBalancerFeignClient
     val newClient = new LoadBalancerFeignClient(client.getDelegate, new CachingSpringLoadBalancerFactory(getClientFactory) {
+      //CachingSpringLoadBalancerFactory中的create方法用于创建FeignLoadBalancer
       override def create(clientName: String): FeignLoadBalancer = {
+        //获取一个内省器
         val serverIntrospector = getClientFactory.getInstance(clientName, classOf[ServerIntrospector])
+        //这个FeignLoadBalancer的匿名实现就是最后返回的对象
         new FeignLoadBalancer(getClientFactory.getLoadBalancer(clientName), getClientFactory.getClientConfig(clientName), serverIntrospector) {
           override def customizeLoadBalancerCommandBuilder(request: FeignLoadBalancer.RibbonRequest, config: IClientConfig,
                                                            builder: LoadBalancerCommand.Builder[FeignLoadBalancer.RibbonResponse]): Unit = {
+            //getRPCLoadBalancers 这里是自己定义的rpc负载均衡，默认有2个，InstanceRPCLoader和SingleInstanceRPCLoadBalancer
             val instance = if(getRPCLoadBalancers.isEmpty) None else {
               val requestBody = SpringMVCRPCSender.getRequest(request).body()
               val requestStr = new String(requestBody, DWCConfiguration.BDP_ENCODING.getValue)
+              //拿到Message并且反序列化成protocol对象
               val obj = RPCConsumer.getRPCConsumer.toObject(BDPJettyServerHelper.gson.fromJson(requestStr, classOf[Message]))
               obj match {
                 case protocol: Protocol =>
                   var serviceInstance: Option[ServiceInstance] = None
                   for (lb <- getRPCLoadBalancers if serviceInstance.isEmpty)
+                    //这里的getLoadBalancer 是netflix自己的lb
                     serviceInstance = lb.choose(protocol, SpringMVCRPCSender.this.serviceInstance, getLoadBalancer)
                   serviceInstance.foreach(f =>
                     info("origin serviceInstance: " + SpringMVCRPCSender.this.serviceInstance + ", chose serviceInstance: " + f)) //TODO just for test
                   serviceInstance
-                case _ => None
+                case _ => None//如果protocol实体bean不继承Protocol类，一般就走这一步，那看来发送给谁是netflix自己处理的
               }
             }
             instance.orElse(Option(SpringMVCRPCSender.this.serviceInstance)).filter(s => StringUtils.isNotBlank(s.getInstance))
@@ -107,6 +114,7 @@ private[rpc] class SpringMVCRPCSender private[rpc](private[rpc] val serviceInsta
 }
 private object SpringMVCRPCSender {
   private var requestField: Field = _
+  //反射获取ClientRequest中的feign.Request对象
   def getRequest(req: ClientRequest): Request = {
     if(requestField == null) synchronized {
       if(requestField == null) {

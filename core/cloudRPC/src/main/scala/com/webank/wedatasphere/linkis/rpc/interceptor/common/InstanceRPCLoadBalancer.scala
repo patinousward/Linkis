@@ -31,6 +31,7 @@ class InstanceRPCLoadBalancer extends RPCLoadBalancer {
 
   override def choose(protocol: Protocol, originService: ServiceInstance, lb: ILoadBalancer): Option[ServiceInstance] = protocol match {
     case instance: InstanceProtocol =>
+      //选择指定的instance进行封装成ServiceInstance
       instance.choseInstance.map(ServiceInstance(originService.getApplicationName, _))
     case _ => None
   }
