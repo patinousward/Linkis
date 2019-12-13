@@ -102,7 +102,7 @@ class DefaultGatewayParser(gatewayParsers: Array[GatewayParser]) extends Abstrac
         if(sendResponseWhenNotMatchVersion(gatewayContext, version)) return
         info(gatewayContext.getRequest.getRemoteAddress + " try to heartbeat.")
         responseHeartbeat(gatewayContext)  //返回建康的gateway列表
-      case COMMON_REGEX(version, serviceId) =>
+      case COMMON_REGEX(version, serviceId) => //如果是普通的请求，只是设置一个Instance到GatewayRoute
         if(sendResponseWhenNotMatchVersion(gatewayContext, version)) return
         val applicationName = if(RPCConfiguration.ENABLE_PUBLIC_SERVICE.getValue && RPCConfiguration.PUBLIC_SERVICE_LIST.contains(serviceId))
           RPCConfiguration.PUBLIC_SERVICE_APPLICATION_NAME.getValue else serviceId
