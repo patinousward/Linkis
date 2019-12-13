@@ -28,6 +28,8 @@ import com.webank.wedatasphere.linkis.scheduler.queue.{Consumer, ConsumerManager
 /**
   * Created by enjoyyin on 2018/9/11.
   */
+
+//一个fifoConsumerManager 对应 一个consumer ，一个group， 一个consumerQueue（就是一个阻塞队列），一个ThreadPoolExecutor(线程池)
 class FIFOConsumerManager(groupName: String) extends ConsumerManager {
 
   def this() = this("FIFO_GROUP")
@@ -41,6 +43,7 @@ class FIFOConsumerManager(groupName: String) extends ConsumerManager {
 
   override def setSchedulerContext(schedulerContext: SchedulerContext): Unit = {
     super.setSchedulerContext(schedulerContext)
+    //初始化group，executorService，consumerQueue 和consumer
     group = getSchedulerContext.getOrCreateGroupFactory.getOrCreateGroup(groupName)
     executorService = group match {
       case g: FIFOGroup => Utils.newCachedThreadPool(g.getMaxRunningJobs + 2, groupName + "-Thread-")

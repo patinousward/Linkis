@@ -36,6 +36,7 @@ abstract class Scheduler {
 }
 
 object Scheduler extends Logging{
+  //暂时未发现使用地方
   def createScheduler(scheduleType: String, schedulerContext: SchedulerContext): Option[Scheduler]={
     scheduleType match {
       case "FIFO" => Some(new FIFOScheduler(schedulerContext))

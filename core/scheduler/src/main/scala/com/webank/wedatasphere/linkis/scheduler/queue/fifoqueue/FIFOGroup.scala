@@ -34,6 +34,13 @@ class FIFOGroup(groupName: String, initCapacity: Int, maxCapacity: Int) extends 
   def getMinAskInterval = minAskInterval
   def setMinAskInterval(minAskInterval: Long) = this.minAskInterval = minAskInterval
 
+  /**
+    * maxAskInterval，maxAskExecutorTimes，maxAskExecutorDuration
+    * minAskInterval，
+    * askExecutorInterval
+    * 变量的区别？？
+    * @return
+    */
   def getMaxAskExecutorDuration = if(getMaxAskExecutorTimes <= 0) Duration.Inf else Duration(getMaxAskExecutorTimes, TimeUnit.MILLISECONDS)
   def getAskExecutorInterval = if(getMaxAskExecutorTimes <= 0) Duration(maxAskInterval, TimeUnit.MILLISECONDS)
   else if(getMaxAskExecutorTimes > maxAskInterval) Duration(math.min(math.max(getMaxAskExecutorTimes / 10, minAskInterval), maxAskInterval), TimeUnit.MILLISECONDS)

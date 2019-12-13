@@ -26,9 +26,10 @@ import com.webank.wedatasphere.linkis.scheduler.queue.{ConsumerManager, GroupFac
   * Created by enjoyyin on 2018/9/1.
   */
 trait SchedulerContext {
+  //GroupFactory单例  用来创建group,无论fifo还是parall，一个groupName 对应一个group
+  def getOrCreateGroupFactory: GroupFactory//一个GroupFactory对应多个Group，用groupName来区别
 
-  def getOrCreateGroupFactory: GroupFactory
-
+  //ConsumerManager单例
   def getOrCreateConsumerManager: ConsumerManager
 
   def getOrCreateExecutorManager: ExecutorManager
@@ -38,6 +39,10 @@ trait SchedulerContext {
 }
 
 object SchedulerContext {
+  //SchedulerContext的下级类就2种，ParallelSchedulerContextImpl和 FIFOSchedulerContextImpl
+  //ParallelSchedulerContextImpl和FIFOSchedulerContextImpl 中
+  //ExecutorManager 和ListenerEventBus  由子类各自去实现，GroupFactory和ExecutorManager只是个单例的方法，单纯的new对象
+  //默认使用fifo的
   val schedulerContext:SchedulerContext = new FIFOSchedulerContextImpl( 100)
   def getSchedulerContext:SchedulerContext = schedulerContext
 }

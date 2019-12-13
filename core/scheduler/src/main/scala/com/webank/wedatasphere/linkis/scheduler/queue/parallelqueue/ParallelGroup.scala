@@ -22,11 +22,12 @@ import com.webank.wedatasphere.linkis.scheduler.queue.fifoqueue.FIFOGroup
 /**
   * Created by enjoyyin on 2018/9/12.
   */
+//这里继承FIFOGroup有点不合适，相同的代码应该抽取成abstract类，而不是为了省代码而继承
 class ParallelGroup(groupName: String, initCapacity: Int, maxCapacity: Int) extends FIFOGroup(groupName, initCapacity, maxCapacity) {
   override def belongTo(event: SchedulerEvent): Boolean = {
      val eventId = event.id.split("_")
      if(eventId.nonEmpty){
-       val name = eventId(0)
+       val name = eventId(0) //这里看出，ParallelGroup的job的id的格式应该是groupName_xxx
        if (name.equals(groupName)) true else false
      }else{
        false
