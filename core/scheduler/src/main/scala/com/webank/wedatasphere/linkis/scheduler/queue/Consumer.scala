@@ -24,6 +24,7 @@ import com.webank.wedatasphere.linkis.scheduler.SchedulerContext
 /**
   * Created by enjoyyin on 2018/8/31.
   */
+//【并没有并行的Consumer，】
 abstract class Consumer(schedulerContext: SchedulerContext,
                         executeService: ExecutorService) extends Runnable with Logging {
 

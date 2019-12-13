@@ -28,6 +28,9 @@ import scala.collection.mutable
 /**
   * Created by enjoyyin on 2018/9/11.
   */
+//一个ParallelConsumerManager 对应 多个consumer ，ExecutorService(线程池)
+//一个consumerListener
+//一个Consumer 包含一个group，一个阻塞队列  通过groupName来区分
 class ParallelConsumerManager(maxParallelismUsers: Int)extends  ConsumerManager{
 
   private val UJES_CONTEXT_CONSTRUCTOR_LOCK = new Object()
@@ -49,9 +52,15 @@ class ParallelConsumerManager(maxParallelismUsers: Int)extends  ConsumerManager{
       executorService
   }
 
+  /**
+    *
+    * @param groupName
+    * @return
+    */
   override def getOrCreateConsumer(groupName: String) = if(consumerGroupMap.contains(groupName)) consumerGroupMap(groupName)
     else UJES_CONTEXT_CONSTRUCTOR_LOCK.synchronized {
       consumerGroupMap.getOrElse(groupName, {
+        //createConsumer  这里创建的也是一个fifo的FIFOUserConsumer
         val newConsumer = createConsumer(groupName)
         val group = getSchedulerContext.getOrCreateGroupFactory.getOrCreateGroup(groupName)
         newConsumer.setGroup(group)
