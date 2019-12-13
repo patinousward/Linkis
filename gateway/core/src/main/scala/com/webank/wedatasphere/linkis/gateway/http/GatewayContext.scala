@@ -33,6 +33,7 @@ trait GatewayContext {
   def getGatewayRoute: GatewayRoute
 
 }
+//BaseGatewayContext  是GatewayContext的唯一实现类
 class BaseGatewayContext extends GatewayContext {
   private var request: GatewayHttpRequest = _
   private var response: GatewayHttpResponse = _

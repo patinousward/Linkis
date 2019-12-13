@@ -33,6 +33,7 @@ class GatewaySpringConfiguration {
 
   @PostConstruct
   def init(): Unit = {
+    //赋值有个好处是以后要使用的话直接从SecurityFilter取即可，不一定要@AutoWire进行使用
     SecurityFilter.setUserRestful(userRestful)
   }
 

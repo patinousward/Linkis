@@ -97,8 +97,15 @@ abstract class AbstractRPCServerLoader extends RPCServerLoader with Logging {
 
   def getDWCServiceInstance(serviceInstance: SpringCloudServiceInstance): ServiceInstance
 
+  /**
+    * 但是rpc发送的时候，并未使用这个方法去通过applicationName获取到instance，再自己写random发送选项，它还是交给feign自己去处理的
+    * @param applicationName
+    * @return
+    */
   override def getServiceInstances(applicationName: String): Array[ServiceInstance] =
+    //这里通过DiscoveryClient单例对象（feign自己的），通过applicationName获取到org.springframework.cloud.client.ServiceInstance信息
     SpringCloudFeignConfigurationCache.getDiscoveryClient.getInstances(applicationName).iterator().map{ s =>
+      //将上面获取到的instance信息封装为自己的dws的instance
       val serviceInstance = getDWCServiceInstance(s)
       serviceInstance.setApplicationName(applicationName) //必须set，因为spring.application.name是区分大小写的，但是Discovery可能不区分
       serviceInstance

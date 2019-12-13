@@ -40,7 +40,7 @@ class RPCSpringConfiguration extends Logging {
   @Bean(Array("rpcServerLoader"))
   @ConditionalOnClass(Array(classOf[EurekaClient]))
   @ConditionalOnMissingBean
-  def createRPCServerLoader(): RPCServerLoader = new EurekaRPCServerLoader
+  def createRPCServerLoader(): RPCServerLoader = new EurekaRPCServerLoader //gateway会用上这个bean
 
   @EventListener
   //ApplicationPreparedEvent

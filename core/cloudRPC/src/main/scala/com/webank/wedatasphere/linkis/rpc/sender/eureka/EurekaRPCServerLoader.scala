@@ -34,6 +34,7 @@ class EurekaRPCServerLoader extends AbstractRPCServerLoader {
 
   override val refreshMaxWaitTime: Duration = RPCConfiguration.BDP_RPC_EUREKA_SERVICE_REFRESH_MAX_WAIT_TIME.getValue.toDuration
 
+  //
   override def getDWCServiceInstance(serviceInstance: SpringCloudServiceInstance): ServiceInstance = serviceInstance match {
     case instance: EurekaServiceInstance =>
       val applicationName = instance.getInstanceInfo.getAppName
