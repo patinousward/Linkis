@@ -30,6 +30,7 @@ import com.webank.wedatasphere.linkis.scheduler.queue.{Consumer, ConsumerManager
   */
 
 //一个fifoConsumerManager 对应 一个consumer ，一个group， 一个consumerQueue（就是一个阻塞队列），一个ThreadPoolExecutor(线程池)
+//一个consumerListener
 class FIFOConsumerManager(groupName: String) extends ConsumerManager {
 
   def this() = this("FIFO_GROUP")
@@ -44,6 +45,7 @@ class FIFOConsumerManager(groupName: String) extends ConsumerManager {
   override def setSchedulerContext(schedulerContext: SchedulerContext): Unit = {
     super.setSchedulerContext(schedulerContext)
     //初始化group，executorService，consumerQueue 和consumer
+    //初始化fifo的goupName是null
     group = getSchedulerContext.getOrCreateGroupFactory.getOrCreateGroup(groupName)
     executorService = group match {
       case g: FIFOGroup => Utils.newCachedThreadPool(g.getMaxRunningJobs + 2, groupName + "-Thread-")
@@ -62,10 +64,14 @@ class FIFOConsumerManager(groupName: String) extends ConsumerManager {
 
   override protected def createConsumer(groupName: String): Consumer = {
     val group = getSchedulerContext.getOrCreateGroupFactory.getOrCreateGroup(null)
+    //new 一个FIFOUserConsumer
     val consumer = new FIFOUserConsumer(getSchedulerContext, getOrCreateExecutorService, group)
     consumer.setGroup(group)
     consumer.setConsumeQueue(consumerQueue)
     if(consumerListener != null) consumerListener.onConsumerCreated(consumer)
+    //start 方法相当于在当前executorService（线程池）中submit（提交）了一个任务，这个任务是FIFOUserConsumer
+    //因为Consumer是Runnable的子类
+    //提交后，会执行Consumer的run方法
     consumer.start()
     consumer
   }
