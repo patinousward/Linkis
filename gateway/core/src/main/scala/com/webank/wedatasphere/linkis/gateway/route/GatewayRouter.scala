@@ -42,7 +42,9 @@ abstract class AbstractGatewayRouter extends GatewayRouter with Logging {
     if(service.isEmpty) {
       val applicationNotExists = new NoApplicationExistsException(10050, "Application " +
         serviceId + " is not exists any instances.")
+      //如果没发现server，refreshServiceInstances  直到超时
       Utils.tryThrow(Utils.waitUntil(() =>{
+        //主要是调用eureka的刷新
         ServiceInstanceUtils.refreshServiceInstances()
         service = findService
         service.nonEmpty
@@ -54,15 +56,16 @@ abstract class AbstractGatewayRouter extends GatewayRouter with Logging {
     }
     service
   }
+  //parsedServiceId 被解析后的serviceId，一般是url中的名字，publicSercice除外
   protected def findService(parsedServiceId: String, tooManyDeal: List[String] => Option[String]): Option[String] = {
     val services = SpringCloudFeignConfigurationCache.getDiscoveryClient
       .getServices.filter(_.toLowerCase.contains(parsedServiceId.toLowerCase)).toList
     if(services.length == 1) Some(services.head)
-    else if(services.length > 1) tooManyDeal(services)
+    else if(services.length > 1) tooManyDeal(services) //如果发现service的数量>1则抛出异常。。所以多sparkEM 应该是名字不同的
     else None
   }
 }
-
+//GatewayRouter 的默认实现
 class DefaultGatewayRouter(gatewayRouters: Array[GatewayRouter]) extends AbstractGatewayRouter{
 
   private def findCommonService(parsedServiceId: String) = findService(parsedServiceId, services => {
@@ -70,7 +73,7 @@ class DefaultGatewayRouter(gatewayRouters: Array[GatewayRouter]) extends Abstrac
     warn("", errorMsg)
     throw errorMsg
   })
-
+  //rout-------------》findAndRefreshIfNotExists---》findReallyService-》findCommonService--》findService
   protected def findReallyService(gatewayContext: GatewayContext): ServiceInstance = {
     var serviceInstance: ServiceInstance = null
     for (router <- gatewayRouters if serviceInstance == null) {
@@ -87,7 +90,9 @@ class DefaultGatewayRouter(gatewayRouters: Array[GatewayRouter]) extends Abstrac
       } else ServiceInstance(applicationName, null)
     }.get
   }
+  //主要作用是根据getApplicationName  找到相应的server服务，接着返回ServiceInstance
   override def route(gatewayContext: GatewayContext): ServiceInstance = if(gatewayContext.getGatewayRoute.getServiceInstance != null) {
+    //经过GatewayParser 后getServiceInstance应该是有值的，applicationname
     val parsedService = gatewayContext.getGatewayRoute.getServiceInstance.getApplicationName
     val serviceInstance = Utils.tryCatch(findReallyService(gatewayContext)){ t =>
       val message = Message.error(ExceptionUtils.getRootCauseMessage(t)) << gatewayContext.getRequest.getRequestURI
