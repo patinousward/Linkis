@@ -127,7 +127,7 @@ object SSOUtils extends Logging {
   }
 
   def getLoginUsername(getUserTicketId: String => Option[String]): String = getLoginUser(getUserTicketId).getOrElse(throw new NonLoginException(s"You are not logged in, please login first(您尚未登录，请先登录!)"))
-
+//将获取的cookie得到(username,logintime)一个元组,最后获取元组的第一个
   private[security] def getLoginUserIgnoreTimeout(getUserTicketId: String => Option[String]): Option[String] =
     getUserTicketId(USER_TICKET_ID_STRING).map(getUserAndLoginTime).flatMap(_.map(_._1))
 

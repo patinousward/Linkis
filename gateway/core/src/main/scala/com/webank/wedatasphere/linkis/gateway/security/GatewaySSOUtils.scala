@@ -34,6 +34,8 @@ object GatewaySSOUtils extends Logging {
   def getLoginUser(gatewayContext: GatewayContext): Option[String] = {
     val cookies = getCookies(gatewayContext)
     Utils.tryCatch(SSOUtils.getLoginUser(cookies)) {
+      //如果抛出的是LoginExpireException,并且cookie名有dataworkcloud_inner_request,而且value是true的话,就不抛出异常,而是调用getLoginUserIgnoreTimeout
+      //将cookie中key为ticketid的过滤出来,并且过滤掉value为dataworkcloud_rpc_user 的
       case _: LoginExpireException if Option(cookies).exists(_.exists(c => c.getName == ALLOW_ACCESS_WITHOUT_TIMEOUT && c.getValue == "true")) =>
         ServerSSOUtils.getLoginUserIgnoreTimeout(key => Option(cookies).flatMap(_.find(_.getName == key).map(_.getValue))).filter(_ != OTHER_SYSTEM_IGNORE_UM_USER)
       case t => throw t
