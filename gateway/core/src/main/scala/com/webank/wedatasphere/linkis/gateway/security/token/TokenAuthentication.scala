@@ -32,12 +32,12 @@ import org.apache.commons.lang.StringUtils
   * created by enjoyyin on 2019/10/4.
   */
 object TokenAuthentication extends Logging {
-
+  //如果打开了token验证 就读取conf 下的token.properties文件
   private val (props, file) = if(ENABLE_TOKEN_AUTHENTICATION.getValue)
     (new Properties, new File(this.getClass.getClassLoader.getResource(TOKEN_AUTHENTICATION_CONFIG.getValue).toURI.getPath))
   else (null, null)
   private var lastModified = 0l
-
+  //定时去读取文件，加了文件修改时间判断
   if(ENABLE_TOKEN_AUTHENTICATION.getValue) {
     Utils.defaultScheduler.scheduleAtFixedRate(new Runnable {
       override def run(): Unit = Utils.tryAndError(init())
@@ -53,23 +53,24 @@ object TokenAuthentication extends Logging {
     Utils.tryFinally(newProps.load(input))(IOUtils.closeQuietly(input))
     props.putAll(newProps)
   }
-
+  //校验请求头上的user是否在token.properties文件中
   private def validateTokenUser(token: String, tokenUser: String): Boolean = {
     val tokenUsers = props.getProperty(token)
     if(tokenUsers == "*" || (StringUtils.isNotBlank(tokenUsers) && tokenUsers.contains(tokenUser))) true
     else false
   }
-
+  //是否是token的请求:请求头上要带上TOKEN_KEY和TOKEN_USER_KEY
   def isTokenRequest(gatewayContext: GatewayContext) : Boolean = {
     (gatewayContext.getRequest.getHeaders.containsKey(TOKEN_KEY) &&
       gatewayContext.getRequest.getHeaders.containsKey(TOKEN_USER_KEY)) || (
       gatewayContext.getRequest.getCookies.containsKey(TOKEN_KEY) &&
         gatewayContext.getRequest.getCookies.containsKey(TOKEN_USER_KEY))
   }
-
+  //token认证的主要的调用方法
   def tokenAuth(gatewayContext: GatewayContext): Boolean = {
     if(!ENABLE_TOKEN_AUTHENTICATION.getValue) {
       val message = Message.noLogin(s"Gateway未启用token认证，请采用其他认证方式!") << gatewayContext.getRequest.getRequestURI
+      //filterResponse其实就是找到response写出去再返回
       SecurityFilter.filterResponse(gatewayContext, message)
       return false
     }
@@ -84,6 +85,7 @@ object TokenAuthentication extends Logging {
         return false
       }
     }
+    //验证用户
     if(validateTokenUser(token, tokenUser)){
       info(s"Token authentication succeed, uri: ${gatewayContext.getRequest.getRequestURI}, token: $token, tokenUser: $tokenUser.")
       GatewaySSOUtils.setLoginUser(gatewayContext.getRequest, tokenUser)
