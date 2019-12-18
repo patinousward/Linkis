@@ -32,6 +32,9 @@ import org.apache.commons.lang.StringUtils
 /**
   * Created by enjoyyin on 2018/1/9.
   */
+
+//gateway的SecurityFilter是转发的时候进行过滤
+// com.webank.wedatasphere.linkis.server.security.SecurityFilter则是直接嵌入到jetty的过滤器中,请求都进行过滤
 class SecurityFilter extends Filter {
   private val refererValidate = ServerConfiguration.BDP_SERVER_SECURITY_REFERER_VALIDATE.getValue
   private val localAddress = ServerConfiguration.BDP_SERVER_ADDRESS.getValue
@@ -69,8 +72,12 @@ class SecurityFilter extends Filter {
       filterResponse(message)
       false
     } else if(request.getRequestURI == ServerConfiguration.BDP_SERVER_RESTFUL_LOGIN_URI.getValue) {
+      //如果是非gateway,然后进行用户的login等操作,直接返回true
       true
     } else {
+
+      //这里getLoginUser 和gateway的是一样的,也是在内存中维系了一个缓存
+      //都是使用SSOUtils进行操作,不过gateway如果logou了,那么服务之间的好像并不会被移除..??因为这两个缓存没有去统一
       val userName = Utils.tryCatch(SecurityFilter.getLoginUser(request)){
         case n: NonLoginException =>
           if(Configuration.IS_TEST_MODE.getValue) None else {
@@ -120,6 +127,7 @@ object SecurityFilter extends Logging {
     .orElse(SSOUtils.getLoginUserIgnoreTimeout(key => Option(req.getHeader(key))).filter(_ == OTHER_SYSTEM_IGNORE_UM_USER))
   def getLoginUser(req: HttpServletRequest): Option[String] = Utils.tryCatch(getLoginUserThrowsExceptionWhenTimeout(req)) {
     case _: LoginExpireException =>
+      //
       SSOUtils.getLoginUserIgnoreTimeout(key => Option(req.getCookies).flatMap(_.find(_.getName == key).map(_.getValue))).filter(user => user != OTHER_SYSTEM_IGNORE_UM_USER &&
         isRequestIgnoreTimeout(req))
     case t => throw t

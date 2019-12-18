@@ -35,6 +35,8 @@ import org.apache.commons.lang.exception.ExceptionUtils
 /**
   * created by cooperyang on 2019/1/9.
   */
+//gateway的SecurityFilter是转发的时候进行过滤
+// com.webank.wedatasphere.linkis.server.security.SecurityFilter则是直接嵌入到jetty的过滤器中,请求都进行过滤
 object SecurityFilter {
 
   private val refererValidate = ServerConfiguration.BDP_SERVER_SECURITY_REFERER_VALIDATE.getValue
