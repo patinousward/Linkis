@@ -31,6 +31,7 @@ object SSOUtils extends Logging {
 
   private[security] val USER_TICKET_ID_STRING = "bdp-user-ticket-id"
   private val sessionTimeout = ServerConfiguration.BDP_SERVER_WEB_SESSION_TIMEOUT.getValue.toLong
+  //用来存储用户登陆的缓存信息,String是ticketid,value是lastAccessTime
   private val userTicketIdToLastAccessTime = new util.HashMap[String, Long]()
   val sslEnable: Boolean = ServerConfiguration.BDP_SERVER_SECURITY_SSL.getValue
   def decryptLogin(passwordString: String): String = if(sslEnable) {
@@ -49,6 +50,7 @@ object SSOUtils extends Logging {
   }, sessionTimeout, sessionTimeout/10, TimeUnit.MILLISECONDS)
 
   private[security] def getUserAndLoginTime(userTicketId: String): Option[(String, Long)] = {
+    //getUsernameByTicket返回的格式应该是username,过期时间
     ServerConfiguration.getUsernameByTicket(userTicketId).map { userAndLoginTime =>
       if(userAndLoginTime.indexOf(",") < 0) throw new IllegalUserTicketException(s"Illegal user token information(非法的用户token信息).")
       val index = userAndLoginTime.lastIndexOf(",")
@@ -112,10 +114,15 @@ object SSOUtils extends Logging {
 
   def getLoginUsername(getCookies: => Array[Cookie]): String = getLoginUser(getCookies).getOrElse(throw new NonLoginException(s"You are not logged in, please login first(您尚未登录，请先登录!)"))
 
+  //: => 其实=>可以省略吧  单纯就是需要传入一个Array[Cookie] 并非是传入一个函数
+  //_ => Option(getCookies... 其实是x:String =>Option(getCookies...的简写
+  //_表示这个函数的实现类是一个无论x的传入是什么,最后都返回一个 Option(getCookies的函数
   def getLoginUser(getCookies: => Array[Cookie]): Option[String] = getLoginUser(_ => Option(getCookies).flatMap(_.find(_.getName == USER_TICKET_ID_STRING).map(_.getValue)))
-
-  def getLoginUser(getUserTicketId: String => Option[String]): Option[String] = getUserTicketId(USER_TICKET_ID_STRING).map { t =>
-    isTimeoutOrNot(t)
+  //这里getUserTicketId 传入的参数对上面getLoginUser方法调用来说就是没啥用,可能别的地方会使用到
+  def getLoginUser(getUserTicketId: String => Option[String]): Option[String] =
+    getUserTicketId(USER_TICKET_ID_STRING).map { t =>
+      //这里t是bdp-user-ticket-id 对应的value
+    isTimeoutOrNot(t)//检验是否过期
     getUserAndLoginTime(t).getOrElse(throw new IllegalUserTicketException( s"Illegal user token information(非法的用户token信息)."))._1
   }
 
@@ -137,6 +144,7 @@ object SSOUtils extends Logging {
         userTicketIdToLastAccessTime.remove(userTicketId)
         throw new LoginExpireException("Login has expired, please log in again!(登录已过期，请重新登录！)")
       }
+      //如果过期了一般的实现,重新更新下access的时间
     } else if(System.currentTimeMillis - lastAccessTime >= sessionTimeout * 0.5) {
       userTicketIdToLastAccessTime.put(userTicketId, System.currentTimeMillis)
     }

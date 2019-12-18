@@ -43,6 +43,7 @@ object ServerConfiguration {
   private val ticketHeader = CommonVars("wds.linkis.ticket.header", "bfs_").getValue
   def getUsernameByTicket(ticketId: String): Option[String] = if(StringUtils.isEmpty(ticketId)) None
   else {
+    //DESUtil解密 获取userName,这个username的格式应该是xxx,username,加密时间
     val userName = DESUtil.decrypt(ticketId, ServerConfiguration.cryptKey)
     if(userName.startsWith(ticketHeader)) Some(userName.substring(ticketHeader.length))
     else None

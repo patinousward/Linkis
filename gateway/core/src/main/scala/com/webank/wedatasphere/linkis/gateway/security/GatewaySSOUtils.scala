@@ -40,7 +40,11 @@ object GatewaySSOUtils extends Logging {
   }
   def getLoginUsername(gatewayContext: GatewayContext): String = SSOUtils.getLoginUsername(getCookies(gatewayContext))
   def setLoginUser(gatewayContext: GatewayContext, username: String): Unit = {
+    //ProxyUserUtils.getProxyUser(username)
+    //proxy.properties中有代理用户名,就返回代理用户名,否则返回原来的名
     val proxyUser = ProxyUserUtils.getProxyUser(username)
+    //主要是将username,时间戳 进行加密,加密后 放入userTicketIdToLastAccessTime缓存中
+    //然后将加密后的ticketid  写入cookie并且返回
     SSOUtils.setLoginUser(c => gatewayContext.getResponse.addCookie(c), proxyUser)
   }
   def setLoginUser(request: GatewayHttpRequest, username: String): Unit = {
@@ -48,8 +52,12 @@ object GatewaySSOUtils extends Logging {
     SSOUtils.setLoginUser(c => request.addCookie(c.getName, Array(c)), proxyUser)
   }
   def removeLoginUser(gatewayContext: GatewayContext): Unit = {
+    //移除缓存userTicketIdToLastAccessTime
     SSOUtils.removeLoginUser(gatewayContext.getRequest.getCookies.flatMap(_._2).toArray)
+    //移除浏览器的cookie
     SSOUtils.removeLoginUserByAddCookie(c => gatewayContext.getResponse.addCookie(c))
   }
+
+  //单纯更新缓存userTicketIdToLastAccessTime中的时间
   def updateLastAccessTime(gatewayContext: GatewayContext): Unit = SSOUtils.updateLastAccessTime(gatewayContext.getRequest.getCookies.flatMap(_._2).toArray)
 }
