@@ -52,6 +52,10 @@ class GatewaySpringConfiguration {
   @Autowired(required = false)
   def createUserRestful(securityHooks: Array[SecurityHook]): UserRestful = {
     val userRestful = new LDAPUserRestful
+    //SecurityHook  实现类在gateway-springcloudGateway中
+    //有prelogin  postlogin
+    //postlogin没有做任何事   应该需要写入数据库,或者rpc服务
+    //prelogin做的事是移除了remoteaddress的websocket
     if(securityHooks != null) userRestful.setSecurityHooks(securityHooks)
     userRestful
   }

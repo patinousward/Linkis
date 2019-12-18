@@ -37,9 +37,11 @@ object SSOInterceptor {
   private var interceptor: SSOInterceptor = _
   def getSSOInterceptor: SSOInterceptor = if(interceptor != null) interceptor else {
     val ssoInterceptors = DataWorkCloudApplication.getApplicationContext.getBeansOfType(classOf[SSOInterceptor])
+    //拦截器只能有一个,多个只会获取第一个
     if(ssoInterceptors != null && !ssoInterceptors.isEmpty) {
       interceptor = ssoInterceptors.head._2
     } else {
+      //如果不是@componet的形式,就用反射创建对象
       interceptor = ClassUtils.getClassInstance(GatewayConfiguration.SSO_INTERCEPTOR_CLASS.getValue)
     }
     interceptor

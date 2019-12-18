@@ -28,6 +28,7 @@ import scala.collection.JavaConversions._
 /**
   * created by cooperyang on 2019/1/9.
   */
+//这里sso只是个统称,ldap也是sso的一种(主要使用的方法)
 object GatewaySSOUtils extends Logging {
   private def getCookies(gatewayContext: GatewayContext): Array[Cookie] = gatewayContext.getRequest.getCookies.flatMap(_._2).toArray
   def getLoginUser(gatewayContext: GatewayContext): Option[String] = {

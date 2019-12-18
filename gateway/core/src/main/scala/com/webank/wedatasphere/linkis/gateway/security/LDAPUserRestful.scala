@@ -23,9 +23,11 @@ import com.webank.wedatasphere.linkis.server._
 /**
   * created by cooperyang on 2019/1/9.
   */
+//在GatewaySpringConfiguration中初始化
 class LDAPUserRestful extends UserPwdAbstractUserRestful with Logging {
 
   override def login(userName: String, password: String): Message = Utils.tryCatch{
+    //这里做的事是从配置文件获取ldap的url进行登陆
     LDAPUtils.login(userName.toString, password.toString)
     "login successful(登录成功)！".data("userName", userName).data("isAdmin", false)
   }{ t =>
