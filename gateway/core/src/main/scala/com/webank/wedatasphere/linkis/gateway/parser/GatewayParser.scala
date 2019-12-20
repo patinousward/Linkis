@@ -110,6 +110,8 @@ class DefaultGatewayParser(gatewayParsers: Array[GatewayParser]) extends Abstrac
         if(sendResponseWhenNotMatchVersion(gatewayContext, version)) return
         val applicationName = if(RPCConfiguration.ENABLE_PUBLIC_SERVICE.getValue && RPCConfiguration.PUBLIC_SERVICE_LIST.contains(serviceId))
           RPCConfiguration.PUBLIC_SERVICE_APPLICATION_NAME.getValue else serviceId
+        //如果是entrance的请求,由于url都一样.这里获取的serviceId都是entrance,无法知道是hiveEntrance
+        //还是sparkEntrance,所以需要router中再过一层
         gatewayContext.getGatewayRoute.setServiceInstance(ServiceInstance(applicationName, null))
       case p if p.startsWith("/dws/") =>
         //TODO add version support

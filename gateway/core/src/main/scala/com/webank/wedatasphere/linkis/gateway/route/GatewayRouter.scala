@@ -78,9 +78,13 @@ class DefaultGatewayRouter(gatewayRouters: Array[GatewayRouter]) extends Abstrac
   //rout-------------》findAndRefreshIfNotExists---》findReallyService-》findCommonService--》findService
   protected def findReallyService(gatewayContext: GatewayContext): ServiceInstance = {
     var serviceInstance: ServiceInstance = null
+    //这里循环gatewayRouters 调用route方法,获取serviceInstance
+    //对于ujes,由于请求都是一样的,不能从url中获取到服务的信息
+    //所以只能用router解析请求参数进行解析,然后比如requestApplicationName中进行
     for (router <- gatewayRouters if serviceInstance == null) {
       serviceInstance = router.route(gatewayContext)
     }
+    //router中没获取到serviceInstance,就从GatewayRoute中获取,非ujes服务就从这里获取
     if(serviceInstance == null) serviceInstance = gatewayContext.getGatewayRoute.getServiceInstance
     val service = findAndRefreshIfNotExists(serviceInstance.getApplicationName,
       findCommonService(serviceInstance.getApplicationName))

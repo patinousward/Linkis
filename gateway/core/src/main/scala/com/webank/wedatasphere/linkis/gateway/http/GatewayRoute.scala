@@ -22,6 +22,7 @@ import com.webank.wedatasphere.linkis.server.JMap
 /**
   * created by cooperyang on 2019/1/9.
   */
+//类似entity 只是用来存一些serverInstance等信息
 class GatewayRoute {
 
   private var requestURI: String = _
