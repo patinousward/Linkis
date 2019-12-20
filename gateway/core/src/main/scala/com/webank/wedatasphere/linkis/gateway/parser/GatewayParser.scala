@@ -73,6 +73,8 @@ abstract class AbstractGatewayParser extends GatewayParser with Logging {
 object AbstractGatewayParser {
   val GATEWAY_HEART_BEAT_URL = Array("gateway", "heartbeat")
 }
+//DefaultGatewayParser 中调用所有的gatewayParsers,在springcloudgateway中,这里是通过spring的注入
+//进行赋值的
 class DefaultGatewayParser(gatewayParsers: Array[GatewayParser]) extends AbstractGatewayParser {
 
   private val COMMON_REGEX = "/api/rest_[a-zA-Z]+/(v\\d+)/([^/]+)/.+".r
