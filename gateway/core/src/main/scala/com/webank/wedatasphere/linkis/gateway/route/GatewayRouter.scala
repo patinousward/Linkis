@@ -30,6 +30,8 @@ import org.apache.commons.lang.exception.ExceptionUtils
 /**
   * created by cooperyang on 2019/1/9.
   */
+//GatewayRouter主要作用是根据parser中传入的ServiceInstance(appName,null) 找到相应的服务,
+//然后将ServiceInstance信息补充完整
 trait GatewayRouter {
 
   def route(gatewayContext: GatewayContext): ServiceInstance

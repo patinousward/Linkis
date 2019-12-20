@@ -29,6 +29,7 @@ import org.apache.commons.lang.StringUtils
 /**
   * created by cooperyang on 2019/1/9.
   */
+//parser的作用主要是解析url,url上面包含了服务名,找服务的过程由router进行
 trait GatewayParser {
 
   def shouldContainRequestBody(gatewayContext: GatewayContext): Boolean
@@ -98,6 +99,7 @@ class DefaultGatewayParser(gatewayParsers: Array[GatewayParser]) extends Abstrac
       gatewayContext.setGatewayRoute(new GatewayRoute)
       gatewayContext.getGatewayRoute.setRequestURI(path)
     }
+    //gatewayparser调用的地方
     gatewayParsers.foreach(_.parse(gatewayContext))
     if(gatewayContext.getGatewayRoute.getServiceInstance == null) path match {
       case CLIENT_HEARTBEAT_REGEX(version) =>  //如果是gateway之间的心跳
