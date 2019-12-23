@@ -17,7 +17,7 @@
 package com.webank.wedatasphere.linkis.gateway.security
 
 import com.webank.wedatasphere.linkis.gateway.http.GatewayContext
-
+//SecurityHook 的两个方法主要在登陆后,登出后进行调用
 trait SecurityHook {
 
   def postLogin(gatewayContext: GatewayContext): Unit

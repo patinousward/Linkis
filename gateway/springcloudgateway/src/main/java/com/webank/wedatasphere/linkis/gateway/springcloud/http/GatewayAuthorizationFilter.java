@@ -76,13 +76,19 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
     }
 
     private BaseGatewayContext getBaseGatewayContext(ServerWebExchange exchange, Route route) {
+        //获取request和response对象
         AbstractServerHttpRequest request = (AbstractServerHttpRequest) exchange.getRequest();
         ServerHttpResponse response = exchange.getResponse();
+        //new 一个BaseGatewayContext  GatewayContext也没别的实现类
         BaseGatewayContext gatewayContext = new BaseGatewayContext();
+        //将AbstractServerHttpRequest 封装为SpringCloudGatewayHttpRequest
         SpringCloudGatewayHttpRequest springCloudGatewayHttpRequest = new SpringCloudGatewayHttpRequest(request);
         gatewayContext.setRequest(springCloudGatewayHttpRequest);
+        //将ServerHttpResponse 封装为SpringCloudGatewayHttpResponse
+        //将request和response放入gatewayContext
         gatewayContext.setResponse(new SpringCloudGatewayHttpResponse(response));
         if(route.getUri().toString().startsWith(SpringCloudGatewayConfiguration.ROUTE_URI_FOR_WEB_SOCKET_HEADER())){
+            //如果是websocket请求,就将gatewayContext中是否是websocket 字段修改为true
             gatewayContext.setWebSocketRequest();
         }
 //        if(!gatewayContext.isWebSocketRequest() && parser.shouldContainRequestBody(gatewayContext)) {
@@ -190,6 +196,7 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        //请求应该是先进来这里
         AbstractServerHttpRequest request = (AbstractServerHttpRequest) exchange.getRequest();
         Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
         BaseGatewayContext gatewayContext = getBaseGatewayContext(exchange, route);
