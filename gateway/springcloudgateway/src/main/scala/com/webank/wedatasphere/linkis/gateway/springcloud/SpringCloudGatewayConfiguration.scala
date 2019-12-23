@@ -44,10 +44,11 @@ import scala.collection.JavaConversions._
 
 //---代表依赖
 // GatewayAutoConfiguration-->GatewayLoadBalancerClientAutoConfiguration--> RibbonAutoConfiguration
-//gateway 走向  RouteLocator--->filter
+//gateway 走向  RouteLocator--->filter---->RibbonLoadBalancerClient
 //推测: RouteLocator 由id,url,断言器(有path断言(这里用的),header断言等等)组成
 //当请求进来的时候,会由RouteLocator断言进行判断,然后走不同的url,然后会将这个请求封装为ServerWebExchange,然后将RouteLocator中的
 //Route也封装进入ServerWebExchange中
+//注意这里的uri只是Route的uri,和request中的不同
 
 /**
   * created by cooperyang on 2019/1/9.

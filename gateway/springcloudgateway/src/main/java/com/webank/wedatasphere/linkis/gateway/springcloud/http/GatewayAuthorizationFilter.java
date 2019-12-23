@@ -102,16 +102,21 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
         String routeUri = route.getUri().toString();
         String scheme = route.getUri().getScheme();
         if(routeUri.startsWith(SpringCloudGatewayConfiguration.ROUTE_URI_FOR_WEB_SOCKET_HEADER())) {
+            //如果RouteUri是lb:ws//开头,让schema赋值为这个头
             scheme = SpringCloudGatewayConfiguration.ROUTE_URI_FOR_WEB_SOCKET_HEADER();
         } else if(routeUri.startsWith(SpringCloudGatewayConfiguration.ROUTE_URI_FOR_HTTP_HEADER())) {
+            //如果RouteUri是lb://开头,让schema赋值为这个头
             scheme = SpringCloudGatewayConfiguration.ROUTE_URI_FOR_HTTP_HEADER();
         } else {
+            //其余只是加上://
             scheme += "://";
         }
         String uri = scheme + serviceInstance.getApplicationName();
         if(StringUtils.isNotBlank(serviceInstance.getInstance())) {
             uri = scheme + SpringCloudGatewayConfiguration.mergeServiceInstance(serviceInstance);
         }
+        //serviceInstance.getInstance()如果为空,uri就等于scheme + applicationName
+        //否则就是schema + applicationName和ip端口的merge
         return Route.async().id(route.getId()).filters(route.getFilters()).order(route.getOrder())
                 .uri(uri).asyncPredicate(route.getPredicate()).build();
     }
@@ -139,15 +144,21 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
 
     private Mono<Void> gatewayDeal(ServerWebExchange exchange, GatewayFilterChain chain, BaseGatewayContext gatewayContext) {
         SpringCloudGatewayHttpResponse gatewayHttpResponse = (SpringCloudGatewayHttpResponse) gatewayContext.getResponse();
+        //鉴权验证用户
         if(!SecurityFilter.doFilter(gatewayContext)) {
+            //如果没有通过用户验证,gatewayContext中的responsey已经将ResponseMono封装好了(鉴权中调用了sendResponse)
             return gatewayHttpResponse.getResponseMono();
         } else if(gatewayContext.isWebSocketRequest()) {
+            //不走entrance的ws请求,直接返回
             return chain.filter(exchange);
         }
         ServiceInstance serviceInstance;
         try {
+            //parser从request url中获取到ServiceInstance对象
+            //如果ws出问题,entrance走http的话,这里也是需要解析的
             parser.parse(gatewayContext);
             if(gatewayHttpResponse.isCommitted()) {
+                //无法parse的时候,这里response早已有ResponseMono的值,这时候直接返回即可
                 return gatewayHttpResponse.getResponseMono();
             }
             serviceInstance = router.route(gatewayContext);
@@ -196,10 +207,16 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
-        //请求应该是先进来这里
+        //请求由RouteLocator转进来这里
         AbstractServerHttpRequest request = (AbstractServerHttpRequest) exchange.getRequest();
+        //attribute可能是放一些属性的地方,类似requst中的请求域,key,value形式
         Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
         BaseGatewayContext gatewayContext = getBaseGatewayContext(exchange, route);
+        //如果是websocket请求,而且包含
+        //这里parser的判断逻辑是,如果是/api/rest_j/version/user请求,就直接true,否则直接调用所有parser的实现类的shouldContainRequestBody方法
+        //这里实现由2个(gateway-ujes-support模块中)
+        //1.如果是entrance/execute  或则entrance/background
+        //2.如果是entrance/kill  log等等..
         if(!gatewayContext.isWebSocketRequest() && parser.shouldContainRequestBody(gatewayContext)) {
             return new DefaultServerRequest(exchange).bodyToMono(String.class).flatMap(requestBody -> {
                 ((SpringCloudGatewayHttpRequest)gatewayContext.getRequest()).setRequestBody(requestBody);

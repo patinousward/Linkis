@@ -53,7 +53,7 @@ class SpringCloudGatewayHttpResponse(response: ServerHttpResponse) extends Gatew
   override def setStatus(status: Int): Unit = response.setStatusCode(HttpStatus.valueOf(status))
 
   override def write(message: String): Unit = cachedHTTPResponseMsg.append(message)
-
+  //这里要详细看下  应该只是生成responseMono对象,并不是真的发送
   override def sendResponse(): Unit = if(responseMono == null) synchronized {
     if(responseMono != null) return
     if(cachedRedirectUrlMsg.nonEmpty) {
