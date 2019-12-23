@@ -156,7 +156,7 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
         ServiceInstance serviceInstance;
         try {
             //parser从request url中获取到ServiceInstance对象
-            //如果ws出问题,entrance走http的话,这里也是需要解析的
+            //封装ServiceInstance,如果是entrance相关请求,则有进一步的解析(从requestbody获取到applicatName)
             parser.parse(gatewayContext);
             if(gatewayHttpResponse.isCommitted()) {
                 //无法parse的时候,这里response早已有ResponseMono的值,这时候直接返回即可
@@ -216,12 +216,13 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
         //attribute可能是放一些属性的地方,类似requst中的请求域,key,value形式
         Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
         BaseGatewayContext gatewayContext = getBaseGatewayContext(exchange, route);
-        //如果是websocket请求,而且包含
+        //如果不是websocket请求,而且应该包含请求体?这里应该是是否应该给请求体序列化
         //这里parser的判断逻辑是,如果是/api/rest_j/version/user请求,就直接true,否则直接调用所有parser的实现类的shouldContainRequestBody方法
         //这里实现由2个(gateway-ujes-support模块中)
         //1.如果是entrance/execute  或则entrance/background
         //2.如果是entrance/kill  log等等..
         if(!gatewayContext.isWebSocketRequest() && parser.shouldContainRequestBody(gatewayContext)) {
+            //entrance的http请求,或则用户请求(login,logout,心跳)进入
             return new DefaultServerRequest(exchange).bodyToMono(String.class).flatMap(requestBody -> {
                 ((SpringCloudGatewayHttpRequest)gatewayContext.getRequest()).setRequestBody(requestBody);
                 ServerHttpRequestDecorator decorator = new ServerHttpRequestDecorator(request) {
@@ -232,9 +233,11 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
                         return Flux.just(bufferFactory.wrap(requestBody.getBytes(StandardCharsets.UTF_8)));
                     }
                 };
+                //最后还是调用gatewayDeal
                 return gatewayDeal(exchange.mutate().request(decorator).build(), chain, gatewayContext);
             });
         } else {
+            //非user或则entrance的请求
             return gatewayDeal(exchange, chain, gatewayContext);
         }
     }
