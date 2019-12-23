@@ -117,6 +117,7 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
         }
         //serviceInstance.getInstance()如果为空,uri就等于scheme + applicationName
         //否则就是schema + applicationName和ip端口的merge
+        //重新生成一个Route,作用?
         return Route.async().id(route.getId()).filters(route.getFilters()).order(route.getOrder())
                 .uri(uri).asyncPredicate(route.getPredicate()).build();
     }
@@ -176,9 +177,11 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
         }
         Route route = exchange.getAttribute(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR);
         if(serviceInstance != null) {
+            //重新封装一个Route..信息更丰富
             Route realRoute = getRealRoute(route, serviceInstance);
             exchange.getAttributes().put(ServerWebExchangeUtils.GATEWAY_ROUTE_ATTR, realRoute);
         } else {
+            //如果是/dws这种path开头的,需要proxyId,这里做相应的解析,并且封装为一个新Route
             RouteDefinition realRd = null;
             String proxyId = gatewayContext.getGatewayRoute().getParams().get("proxyId");
             for(RouteDefinition rd : gatewayProperties.getRoutes()){
@@ -206,6 +209,7 @@ public class GatewayAuthorizationFilter extends JavaLog implements GlobalFilter,
     }
 
     @Override
+    //这个方法的返回值是Mono<Void>
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         //请求由RouteLocator转进来这里
         AbstractServerHttpRequest request = (AbstractServerHttpRequest) exchange.getRequest();

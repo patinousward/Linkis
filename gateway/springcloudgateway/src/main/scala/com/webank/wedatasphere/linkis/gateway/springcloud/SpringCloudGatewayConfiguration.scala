@@ -118,6 +118,7 @@ class SpringCloudGatewayConfiguration {
   //SpringClientFactory  在RibbonAutoConfiguration中有注入
   @Bean
   def createLoadBalancerClient(springClientFactory: SpringClientFactory) = new RibbonLoadBalancerClient(springClientFactory) {
+    //globalFilter后,请求就来到了负载均衡器,也就是这里,然后来转发请求
     //重写了getServer的方法
     override def getServer(serviceId: String): Server = if(isMergeModuleInstance(serviceId)) {
       //如果serviceId 是合并ModuleInstance(??什么时候会合并)
@@ -133,7 +134,9 @@ class SpringCloudGatewayConfiguration {
 object SpringCloudGatewayConfiguration extends Logging {
   private val MERGE_MODULE_INSTANCE_HEADER = "merge-gw-"
   val ROUTE_URI_FOR_HTTP_HEADER = "lb://"
-  val ROUTE_URI_FOR_WEB_SOCKET_HEADER = "lb:ws://"                  //lb应该是loadbalance?
+  val ROUTE_URI_FOR_WEB_SOCKET_HEADER = "lb:ws://"
+  //LoadBalancerClientFilter 在交换属性 GATEWAY_ REQUEST_ URL_ ATTR 中查找URL，
+  // 如果URL有一个 lb 前缀 ，即 lb：// myservice，将使用 LoadBalancerClient 将名称 解析为实际的主机和端口
   val PROXY_URL_PREFIX = "/dws/"
   val API_URL_PREFIX = "/api/"
   val PROXY_ID = "proxyId"
