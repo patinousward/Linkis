@@ -116,8 +116,12 @@ class GatewayWebSocketSession private(inbound: WebsocketInbound,
   def isAlive: Boolean = !webSocketConnection.getInbound.context().isDisposed
 
   override def receive(): Flux[WebSocketMessage] = webSocketConnection.getInbound
+    //aggregateFrames(int size) 用来拓展输入帧的大小,默认65536
     .aggregateFrames(ServerConfiguration.BDP_SERVER_SOCKET_TEXT_MESSAGE_SIZE_MAX.getValue.toInt)
+    //接受帧数据(前台传过来的数据,就是execute的请求体)
+    //map将数据由WebSocketFrame  转化为WebSocketMessage(Flux<WebSocketFrame> -->Flux<WebSocketMessage> )
     .receiveFrames.map(new function.Function[WebSocketFrame, WebSocketMessage] {
+    //toMessage是NettyWebSocketSessionSupport 自己的方法,也就是这个类的父类的方法
     override def apply(t: WebSocketFrame): WebSocketMessage = toMessage(t)
   })
 }
