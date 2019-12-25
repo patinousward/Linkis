@@ -76,23 +76,35 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
     }
 
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
+        ////这一步是模仿WebsocketRoutingFilter中的filter方法(用反射)
         changeSchemeIfIsWebSocketUpgrade(websocketRoutingFilter, exchange);
+        //模仿WebsocketRoutingFilter  获取requestUrl
         URI requestUrl = exchange.getRequiredAttribute(ServerWebExchangeUtils.GATEWAY_REQUEST_URL_ATTR);
+        //获取url中的schema
         String scheme = requestUrl.getScheme();
+        //模仿WebsocketRoutingFilter 只是修改了boolean的判断
         if (!ServerWebExchangeUtils.isAlreadyRouted(exchange) && ("ws".equals(scheme) || "wss".equals(scheme))) {
             ServerWebExchangeUtils.setAlreadyRouted(exchange);
             HttpHeaders headers = exchange.getRequest().getHeaders();
             List<String> protocols = headers.get("Sec-WebSocket-Protocol");
+            //到目前都是模仿WebsocketRoutingFilter  少了对header的过滤
             if (protocols != null) {
                 protocols = (List<String>)protocols.stream().flatMap((header) -> {
                     return Arrays.stream(StringUtils.commaDelimitedListToStringArray(header));
                 }).map(String::trim).collect(Collectors.toList());
             }
+            //到目前都是模仿WebsocketRoutingFilter
             List<String> collectedProtocols = protocols;
+            //new 一个BaseGatewayContext,并将exchange中的request封装为SpringCloudGatewayHttpRequest,response则直接new WebsocketGatewayHttpResponse,没有封装
             GatewayContext gatewayContext = getGatewayContext(exchange);
+            //return 也是模仿WebsocketRoutingFilter的
+            //new 一个WebSocketHandler的匿名实现类,重写方法
+            //这里再此展示了匿名实现类的一些用法,可以将外部参数直接传递进去方法
             return this.webSocketService.handleRequest(exchange, new WebSocketHandler() {
                 public Mono<Void> handle(WebSocketSession webClientSocketSession) {
+                    //封装webClientSocketSession,并且将对象的引用放入缓存中
                     GatewayWebSocketSessionConnection gatewayWebSocketSession = getGatewayWebSocketSessionConnection(GatewaySSOUtils.getLoginUsername(gatewayContext), webClientSocketSession);
+                    //创建一个FluxSinkListner, 方法会在sink(类似output)的时候进行调用
                     FluxSinkListener fluxSinkListener = new FluxSinkListener<WebSocketMessage>(){
                         private FluxSink<WebSocketMessage> fluxSink = null;
                         @Override
@@ -101,6 +113,8 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                         }
                         @Override
                         public void next(WebSocketMessage webSocketMessage) {
+                            //输出的时候更新下用户访问时间,就是websocket推送的时候更新
+                            //保证脚本执行的过程中,不会因为登陆等问题跳到登陆页面
                             if(fluxSink != null) fluxSink.next(webSocketMessage);
                             GatewaySSOUtils.updateLastAccessTime(gatewayContext);
                         }
@@ -109,6 +123,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                             if(fluxSink != null) fluxSink.complete();
                         }
                     };
+                    //创建一个Flux,并且将sink监听器放入
                     Flux<WebSocketMessage> receives = Flux.create(sink -> {
                         fluxSinkListener.setFluxSink(sink);
                     });

@@ -50,6 +50,7 @@ object SpringCloudGatewayWebsocketUtils extends Logging {//(websocketRoutingFilt
   private val changeSchemeMethod = classOf[WebsocketRoutingFilter].getDeclaredMethod("changeSchemeIfIsWebSocketUpgrade", classOf[ServerWebExchange])
   private[websocket] val getDelegateMethod = classOf[AbstractWebSocketSession[_]].getDeclaredMethod("getDelegate")
   private val getHeadersFiltersMethod = classOf[WebsocketRoutingFilter].getDeclaredMethod("getHeadersFilters")
+  //gateway中的缓存,key是请求过来的原生的websocketsession的id
   private val cachedWebSocketSessions = new ConcurrentHashMap[String, GatewayWebSocketSessionConnection]
   changeSchemeMethod.setAccessible(true)
   getDelegateMethod.setAccessible(true)
@@ -79,12 +80,15 @@ object SpringCloudGatewayWebsocketUtils extends Logging {//(websocketRoutingFilt
   }
 
   private def getWebSocketSessionKey(webSocketSession: WebSocketSession): String = webSocketSession match {
+      //如果是GatewayWebSocketSessionConnection(linkis对webSocketSession 的封装),就直接递归拿到最本质的webSocketSession
+      //无论它被封装了多少层
     case gatewaySession: GatewayWebSocketSessionConnection => getWebSocketSessionKey(gatewaySession.webSocketSession)
     case _ => webSocketSession.getId
   }
 
   def getProxyWebSocketSession(webSocketSession: WebSocketSession, serviceInstance: ServiceInstance): WebSocketSession = {
     val key = getWebSocketSessionKey(webSocketSession)
+    //如果缓存中已经包含了key,就直接获取这个session,否则返回null
     if(cachedWebSocketSessions.containsKey(key)) cachedWebSocketSessions synchronized {
       val webSocketSession = cachedWebSocketSessions.get(key)
       if(webSocketSession != null) webSocketSession.getProxyWebSocketSession(serviceInstance).orNull
@@ -93,10 +97,14 @@ object SpringCloudGatewayWebsocketUtils extends Logging {//(websocketRoutingFilt
   }
 
   def getGatewayWebSocketSessionConnection(user: String, webSocketSession: WebSocketSession): GatewayWebSocketSessionConnection = {
+    //获取webSocketSession的id  并从cachedWebSocketSessions 缓存中获取webSocketSession
+    //
     val key = getWebSocketSessionKey(webSocketSession)
     if(!cachedWebSocketSessions.containsKey(key)) cachedWebSocketSessions synchronized {
       if(!cachedWebSocketSessions.containsKey(key)) {
         info(s"receive a new webSocket connection $key from DWC-UI for user $user.")
+        //如果缓存中没有,就直接new 一个GatewayWebSocketSessionConnection用来封装原生的webSocketSession
+        //并且放入缓存
         cachedWebSocketSessions.put(key, new GatewayWebSocketSessionConnection(webSocketSession, user))
       }
     }
@@ -112,6 +120,7 @@ object SpringCloudGatewayWebsocketUtils extends Logging {//(websocketRoutingFilt
     getHeadersFiltersMethod.invoke(websocketRoutingFilter).asInstanceOf[util.List[HttpHeadersFilter]]
 
   def changeSchemeIfIsWebSocketUpgrade(websocketRoutingFilter: WebsocketRoutingFilter, exchange: ServerWebExchange): Unit =
+    //使用反射调用 WebsocketRoutingFilter类的changeSchemeIfIsWebSocketUpgrade方法
     changeSchemeMethod.invoke(websocketRoutingFilter, exchange)
 
   def getGatewayContext(exchange: ServerWebExchange): BaseGatewayContext = {
