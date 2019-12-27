@@ -16,6 +16,7 @@
 
 package com.webank.wedatasphere.linkis.gateway.springcloud.websocket;
 
+import com.google.common.base.Function;
 import com.webank.wedatasphere.linkis.common.ServiceInstance;
 import com.webank.wedatasphere.linkis.gateway.http.GatewayContext;
 import com.webank.wedatasphere.linkis.gateway.parser.GatewayParser;
@@ -87,7 +88,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
             ServerWebExchangeUtils.setAlreadyRouted(exchange);
             HttpHeaders headers = exchange.getRequest().getHeaders();
             List<String> protocols = headers.get("Sec-WebSocket-Protocol");
-            //到目前都是模仿WebsocketRoutingFilter  少了对header的过滤
+            //到目前都是模仿WebsocketRoutingFilter
             if (protocols != null) {
                 protocols = (List<String>)protocols.stream().flatMap((header) -> {
                     return Arrays.stream(StringUtils.commaDelimitedListToStringArray(header));
@@ -104,7 +105,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                 public Mono<Void> handle(WebSocketSession webClientSocketSession) {
                     //封装webClientSocketSession,并且将对象的引用放入缓存中
                     GatewayWebSocketSessionConnection gatewayWebSocketSession = getGatewayWebSocketSessionConnection(GatewaySSOUtils.getLoginUsername(gatewayContext), webClientSocketSession);
-                    //创建一个FluxSinkListner, 方法会在sink(类似output)的时候进行调用
+                    //创建一个FluxSinkListner的匿名实现对象(这个类是自己定义的)
                     FluxSinkListener fluxSinkListener = new FluxSinkListener<WebSocketMessage>(){
                         private FluxSink<WebSocketMessage> fluxSink = null;
                         @Override
@@ -123,10 +124,11 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                             if(fluxSink != null) fluxSink.complete();
                         }
                     };
-                    //创建一个Flux,并且将sink监听器放入
+                    //创建一个Flux,并且将sink放入监听器
                     Flux<WebSocketMessage> receives = Flux.create(sink -> {
                         fluxSinkListener.setFluxSink(sink);
                     });
+                    //转化为WebSocketMessage(Flux<WebSocketFrame> -->Flux<WebSocketMessage> )
                     gatewayWebSocketSession.receive().doOnNext(WebSocketMessage::retain).map(t -> {
                         String user;
                         try {
@@ -138,33 +140,48 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                             }
                             return gatewayWebSocketSession.close();
                         }
+                        //public enum Type { TEXT, BINARY, PING, PONG }
+                        //维持ping pong,防止websocket断掉
                         if(t.getType() == WebSocketMessage.Type.PING || t.getType() == WebSocketMessage.Type.PONG) {
                             WebSocketMessage pingMsg = new WebSocketMessage(WebSocketMessage.Type.PING, t.getPayload());
                             gatewayWebSocketSession.heartbeat(pingMsg);
                             return sendMsg(exchange, gatewayWebSocketSession, pingMsg);
                         }
+                        //这里payload 的概念好像缓冲区数据?
                         String json = t.getPayloadAsText();
                         t.release();
+                        //将前台的数据反序列化为一个ServerEvent对象
                         ServerEvent serverEvent = SocketServerEvent.getServerEvent(json);
+                        //ServerEvent对象 中的data数据()放入请求体,method(entrance/execute或则entrance/background,只有这2个)放入requesturi中
                         ((SpringCloudGatewayHttpRequest) gatewayContext.getRequest()).setRequestBody(SocketServerEvent.getMessageData(serverEvent));
                         ((SpringCloudGatewayHttpRequest) gatewayContext.getRequest()).setRequestURI(serverEvent.getMethod());
+                        //和http一样,通过url生成相应的ServiceInstance对象
                         parser.parse(gatewayContext);
                         if (gatewayContext.getResponse().isCommitted()) {
                             return sendMsg(exchange, gatewayWebSocketSession, ((WebsocketGatewayHttpResponse) gatewayContext.getResponse()).getWebSocketMsg());
                         }
+                        //router 补充ServiceInstance信息,含ip端口
                         ServiceInstance serviceInstance = router.route(gatewayContext);
                         if (gatewayContext.getResponse().isCommitted()) {
                             return sendMsg(exchange, gatewayWebSocketSession, ((WebsocketGatewayHttpResponse) gatewayContext.getResponse()).getWebSocketMsg());
                         }
+                        //从gatewayWebSocketSession中获取存活的代理的WebSocketSession,不存活得从缓存中移除
+                        //一个gatewayWebSocketSession对象中有个缓存保存ProxyWebSocketSession的集合
                         WebSocketSession webSocketProxySession = getProxyWebSocketSession(gatewayWebSocketSession, serviceInstance);
                         if (webSocketProxySession != null) {
                             return sendMsg(exchange, webSocketProxySession, json);
                         } else {
+                            //一般来说,刚进行ws连接的话,上面获取的webSocketProxySession是null
                             URI uri = exchange.getRequest().getURI();
+                            //看下uri是否经过了url编码
                             Boolean encoded = ServerWebExchangeUtils.containsEncodedParts(uri);
                             String host;
                             int port;
+                            //从Instance中获取ip和端口号,并重新封装requestURI
+                            //之前的requestURI  的ip的端口是gateway的,这里需要封装为entrance那边的ip和端口
+                            //转发的原因是因为springcloud gateway 没法进行websocket的转发?只能提供gateway和浏览器的ws连接
                             if (StringUtils.isEmpty(serviceInstance.getInstance())) {
+                                //如果instance为空,从loadbalance中获取service(一般不会走这步?因为上面router中一般会封装了,除非新加入服务之类的)
                                 org.springframework.cloud.client.ServiceInstance service = loadBalancer.choose(serviceInstance.getApplicationName());
                                 host = service.getHost();
                                 port = service.getPort();
@@ -174,10 +191,14 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                                 port = Integer.parseInt(instanceInfo[1]);
                             }
                             URI requestURI = UriComponentsBuilder.fromUri(requestUrl).host(host).port(port).build(encoded).toUri();
+                            //模仿WebsocketRoutingFilter进行httpheader的过滤
                             HttpHeaders filtered = HttpHeadersFilter.filterRequest(getHeadersFilters(websocketRoutingFilter), exchange);
+                            //封装忽略超时的cookies 到header中,避免ws传输中断掉
                             SpringCloudHttpUtils.addIgnoreTimeoutSignal(filtered);
+                            //最后的转化..???
                             return webSocketClient.execute(requestURI, filtered, new WebSocketHandler() {
                                 public Mono<Void> handle(WebSocketSession proxySession) {
+                                    //gatewayWebSocketSession的ProxyWebSocketSession缓存中添加此次代理ws的对象
                                     setProxyWebSocketSession(user, serviceInstance, gatewayWebSocketSession, proxySession);
                                     Mono<Void> proxySessionSend = sendMsg(exchange, proxySession, json);
                                     proxySessionSend.subscribe();
@@ -193,6 +214,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                     }).doOnComplete(fluxSinkListener::complete).doOnNext(Mono::subscribe).subscribe();
                     return gatewayWebSocketSession.send(receives);
                 }
+                //这个看WebsocketRoutingFilter知道,protocols就是92-93行中获取到的protocols
                 public List<String> getSubProtocols() {
                     return collectedProtocols;
                 }
