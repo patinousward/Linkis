@@ -195,7 +195,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                             HttpHeaders filtered = HttpHeadersFilter.filterRequest(getHeadersFilters(websocketRoutingFilter), exchange);
                             //封装忽略超时的cookies 到header中,避免ws传输中断掉
                             SpringCloudHttpUtils.addIgnoreTimeoutSignal(filtered);
-                            //最后的转化..???
+                            //这里返回的是map中进行转化的内容   WebSocketMessage--->Mono<Void>
                             return webSocketClient.execute(requestURI, filtered, new WebSocketHandler() {
                                 public Mono<Void> handle(WebSocketSession proxySession) {
                                     //gatewayWebSocketSession的ProxyWebSocketSession缓存中添加此次代理ws的对象
@@ -212,6 +212,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                             });
                         }
                     }).doOnComplete(fluxSinkListener::complete).doOnNext(Mono::subscribe).subscribe();
+                    //这里才是重写方法的返回
                     return gatewayWebSocketSession.send(receives);
                 }
                 //这个看WebsocketRoutingFilter知道,protocols就是92-93行中获取到的protocols
