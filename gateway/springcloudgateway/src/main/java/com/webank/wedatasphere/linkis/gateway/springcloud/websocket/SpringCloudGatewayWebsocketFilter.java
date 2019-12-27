@@ -190,6 +190,11 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                                 host = instanceInfo[0];
                                 port = Integer.parseInt(instanceInfo[1]);
                             }
+                            //这里uri应该是ws://gatewayip:port/ws/api/entrance/connect
+                            //  其中/ws开头经过nginx直接转发到gateway进入filter
+                            //而http请求  /api开头通过nginx转发也进入gateway的filter
+                            //gateway可以转发ws请求,但是这个ws地址可能是不同的,对于linkis这种接口都一样的
+                            //wds.linkis.server.socket.uri 中配置jetty的websoket path,Gatwickway拦截后进入websocket的servlet
                             URI requestURI = UriComponentsBuilder.fromUri(requestUrl).host(host).port(port).build(encoded).toUri();
                             //模仿WebsocketRoutingFilter进行httpheader的过滤
                             HttpHeaders filtered = HttpHeadersFilter.filterRequest(getHeadersFilters(websocketRoutingFilter), exchange);
