@@ -134,7 +134,7 @@ class SpringCloudGatewayConfiguration {
 object SpringCloudGatewayConfiguration extends Logging {
   private val MERGE_MODULE_INSTANCE_HEADER = "merge-gw-"
   val ROUTE_URI_FOR_HTTP_HEADER = "lb://"
-  val ROUTE_URI_FOR_WEB_SOCKET_HEADER = "lb:ws://"
+  val ROUTE_URI_FOR_WEB_SOCKET_HEADER = "lb:ws://"  //lb:ws://是ws的routes的uri
   //LoadBalancerClientFilter 在交换属性 GATEWAY_ REQUEST_ URL_ ATTR 中查找URL，
   // 如果URL有一个 lb 前缀 ，即 lb：// myservice，将使用 LoadBalancerClient 将名称 解析为实际的主机和端口
   val PROXY_URL_PREFIX = "/dws/"
