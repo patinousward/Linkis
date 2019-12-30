@@ -206,6 +206,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                                 public Mono<Void> handle(WebSocketSession proxySession) {
                                     //gatewayWebSocketSession的ProxyWebSocketSession缓存中添加此次代理ws的对象
                                     setProxyWebSocketSession(user, serviceInstance, gatewayWebSocketSession, proxySession);
+                                    //将获取的数据重新封装为 Mono<Void>,使用proxySession进行发送数据
                                     Mono<Void> proxySessionSend = sendMsg(exchange, proxySession, json);
                                     proxySessionSend.subscribe();
                                     return getProxyWebSocketSession(gatewayWebSocketSession, serviceInstance).receive()
