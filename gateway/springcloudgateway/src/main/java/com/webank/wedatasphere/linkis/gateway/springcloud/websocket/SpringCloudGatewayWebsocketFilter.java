@@ -128,7 +128,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                     Flux<WebSocketMessage> receives = Flux.create(sink -> {
                         fluxSinkListener.setFluxSink(sink);
                     });
-                    //转化为WebSocketMessage(Flux<WebSocketFrame> -->Flux<WebSocketMessage> )
+                    //receive()方法,转化为WebSocketMessage(Flux<WebSocketFrame> -->Flux<WebSocketMessage> )
                     gatewayWebSocketSession.receive().doOnNext(WebSocketMessage::retain).map(t -> {
                         String user;
                         try {
@@ -201,6 +201,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                             //封装忽略超时的cookies 到header中,避免ws传输中断掉
                             SpringCloudHttpUtils.addIgnoreTimeoutSignal(filtered);
                             //这里返回的是map中进行转化的内容   WebSocketMessage--->Mono<Void>
+                            //websocketClient可以对比httpclient联想,就是发送websocket请求的,这里用的注入实例是ReactorNettyWebSocketClient
                             return webSocketClient.execute(requestURI, filtered, new WebSocketHandler() {
                                 public Mono<Void> handle(WebSocketSession proxySession) {
                                     //gatewayWebSocketSession的ProxyWebSocketSession缓存中添加此次代理ws的对象
@@ -208,6 +209,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                                     Mono<Void> proxySessionSend = sendMsg(exchange, proxySession, json);
                                     proxySessionSend.subscribe();
                                     return getProxyWebSocketSession(gatewayWebSocketSession, serviceInstance).receive()
+                                            //then 是flux<> 转Mono<Void>的方法
                                             .doOnNext(WebSocketMessage::retain).doOnNext(fluxSinkListener::next).then();
                                 }
 
