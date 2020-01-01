@@ -241,6 +241,13 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
         return websocketRoutingFilter.getOrder() - 1; 
     }
 
+
+    /**
+     * springcloud的这个filter貌似只是做了转发，但是服务端返回的数据，这个是怎么处理的呢？封装的wsrespnose和httpresponse
+     * 似乎只是返回一些错误信息之类的回去
+     * @param <T>
+     */
+
     interface FluxSinkListener<T> {
         void setFluxSink(FluxSink<T> fluxSink);
         void next(T t);
