@@ -124,7 +124,8 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                             if(fluxSink != null) fluxSink.complete();
                         }
                     };
-                    //创建一个Flux,并且将sink放入监听器
+                    //创建一个Flux,并且将sink对象放入fluxSinkListener中，当listener调用next方法的时候，sink的next方法就会被调用
+                    //当然需要先subscribe，否则create中的函数不会被调用
                     Flux<WebSocketMessage> receives = Flux.create(sink -> {
                         fluxSinkListener.setFluxSink(sink);
                     });
