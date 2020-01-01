@@ -212,6 +212,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                                     proxySessionSend.subscribe();
                                     return getProxyWebSocketSession(gatewayWebSocketSession, serviceInstance).receive()
                                             //then 是flux<> 转Mono<Void>的方法
+                                            //fluxSinkListener::next将数据直接流向了receives中
                                             .doOnNext(WebSocketMessage::retain).doOnNext(fluxSinkListener::next).then();
                                 }
 
@@ -221,6 +222,8 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                             });
                         }
                     }).doOnComplete(fluxSinkListener::complete).doOnNext(Mono::subscribe).subscribe();
+                    //通过map的循环遍历，直接就将原来websocketsession中的数据转化url后直接放入receives中，通过send方法进行发送
+
                     //这里才是重写方法的返回
                     return gatewayWebSocketSession.send(receives);
                 }
