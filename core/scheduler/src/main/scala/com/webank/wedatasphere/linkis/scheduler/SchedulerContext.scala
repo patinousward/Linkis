@@ -31,9 +31,10 @@ trait SchedulerContext {
 
   //ConsumerManager单例
   def getOrCreateConsumerManager: ConsumerManager
-
+  //执行管理器  单例,entrance中是EntranceExecutorManagerImpl
   def getOrCreateExecutorManager: ExecutorManager
 
+  //这里子类的实现都是null 暂时无用
   def getOrCreateSchedulerListenerBus: ListenerEventBus[_<: SchedulerEventListener, _<: ScheduleEvent]
 
 }

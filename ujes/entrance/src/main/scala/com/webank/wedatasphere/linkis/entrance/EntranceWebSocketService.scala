@@ -45,10 +45,11 @@ import org.apache.commons.lang.StringUtils
   * Created by enjoyyin on 2018/9/14.
   */
 class EntranceWebSocketService extends ServerEventService with EntranceEventListener {
-
+  //缓存 key是exec_id,value是websok
   private val jobIdToEventId = new util.HashMap[String, Integer]
   private var entranceServer: EntranceServer = _
   private var entranceRestfulApi:EntranceRestfulApi = _
+  //缓存 key是exec_id,value是websocketTag(文件名MD5)
   private val websocketTagJobID = new util.HashMap[String, String]()
   private val restfulURI = if(ServerConfiguration.BDP_SERVER_RESTFUL_URI.getValue.endsWith("/")) ServerConfiguration.BDP_SERVER_RESTFUL_URI.getValue
     else ServerConfiguration.BDP_SERVER_RESTFUL_URI.getValue + "/"
@@ -64,6 +65,7 @@ class EntranceWebSocketService extends ServerEventService with EntranceEventList
   def setEntranceServer(entranceServer: EntranceServer):Unit = this.entranceServer = entranceServer
   def setEntranceRestfulApi(entranceRestfulApi: EntranceRestfulApi):Unit = this.entranceRestfulApi = entranceRestfulApi
 
+  //jobIdToEventId  移除已经complete的job
   Utils.defaultScheduler.scheduleAtFixedRate(new Runnable {
     override def run(): Unit = jobIdToEventId.keys.map(entranceServer.getJob).foreach {
       case Some(job) => if(job.isCompleted && System.currentTimeMillis - job.getEndTime > 5000) {
@@ -73,6 +75,7 @@ class EntranceWebSocketService extends ServerEventService with EntranceEventList
     }
   }, 30, 60, TimeUnit.SECONDS) //TODO Time interval(时间间隔做成参数)
 
+  //定时主动向前台websoket推送waitingSize
   Utils.defaultScheduler.scheduleAtFixedRate(new Runnable {
     override def run(): Unit = {
       if(jobIdToEventId.isEmpty) return
@@ -117,6 +120,9 @@ class EntranceWebSocketService extends ServerEventService with EntranceEventList
     val params = event.getData.map{case (k, v) => k -> v.asInstanceOf[Any]}  //TODO Convert to a suitable Map(转换成合适的Map)
     val websocketTag = event.getWebsocketTag
     params.put(TaskConstant.UMUSER, event.getUser)
+    /**
+      * 执行的正真的方法
+      */
     val jobId = entranceServer.execute(params)
     jobIdToEventId synchronized jobIdToEventId.put(jobId, event.getId)
     websocketTagJobID synchronized websocketTagJobID.put(jobId, websocketTag)
@@ -125,6 +131,7 @@ class EntranceWebSocketService extends ServerEventService with EntranceEventList
     val job = entranceServer.getJob(jobId).get
     val executeApplicationName:String = task.getExecuteApplicationName
     val creator:String = task.getRequestApplicationName
+    //execID  加上executeApplicationName,instance信息,creator信息
     val execID = ZuulEntranceUtils.generateExecID(jobId, executeApplicationName, Sender.getThisInstance, creator)
     val executeResponseMsg  = Message.ok("Request execution succeeded(请求执行成功)")
     executeResponseMsg.data("execID", execID).data("taskID", taskID).data("websocketTag", websocketTagJobID.get(jobId))

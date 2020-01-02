@@ -60,6 +60,7 @@ abstract class EntranceServer extends Logging {
     //将map parse 成 task 之后，我们需要将它存储到数据库中，task可以获得唯一的taskID
     getEntranceContext.getOrCreatePersistenceManager().createPersistenceEngine().persist(task)
     val logAppender = new java.lang.StringBuilder()
+    //拦截器抛异常..这里直接调用持久化器去update信息
     Utils.tryThrow(getEntranceContext.getOrCreateEntranceInterceptors().foreach(int => task = int.apply(task, logAppender))) { t =>
       val error = t match {
         case error: ErrorException => error
@@ -86,6 +87,7 @@ abstract class EntranceServer extends Logging {
     job.setProgressListener(getEntranceContext.getOrCreatePersistenceManager())
     job.setJobListener(getEntranceContext.getOrCreatePersistenceManager())
     job match {
+        //所有job公用一个ServerListenerEventBus  对象
       case entranceJob: EntranceJob => entranceJob.setEntranceListenerBus(getEntranceContext.getOrCreateEventListenerBus)
       case _ =>
     }

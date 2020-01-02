@@ -251,6 +251,7 @@ abstract class Job extends Runnable with SchedulerEvent with Closeable with Logg
       close()
       return
     }
+    //executor.execute 只是发个rpc请求给EM(entrance中的逻辑)
     val rs = Utils.tryCatch(executor.execute(jobToExecuteRequest)){
       case t: InterruptedException =>
         warn(s"job $toString is interrupted by user!", t)

@@ -32,6 +32,9 @@ abstract class ExecutorManager {
 
   def askExecutor(event: SchedulerEvent): Option[Executor]
 
+  /**
+    * scheduler中的主要方法   askExecutor获取到Executor 后放入JOb中,当job 的run方法执行的时候
+    */
   def askExecutor(event: SchedulerEvent, wait: Duration): Option[Executor]
 
   def getById(id: Long): Option[Executor]

@@ -28,7 +28,7 @@ import scala.collection.mutable
 /**
   * Created by enjoyyin on 2018/9/11.
   */
-//一个ParallelConsumerManager 对应 多个consumer ，ExecutorService(线程池)
+//一个ParallelConsumerManager 对应 多个consumer ，一个ExecutorService(线程池)
 //一个consumerListener
 //一个Consumer 包含一个group，一个阻塞队列  通过groupName来区分
 class ParallelConsumerManager(maxParallelismUsers: Int)extends  ConsumerManager{

@@ -48,7 +48,9 @@ abstract class AbstractScheduler extends Scheduler {
   override def get(event: SchedulerEvent): Option[SchedulerEvent] = get(event.getId)
 
   override def get(eventId: String): Option[SchedulerEvent] = {
+    //比如exec_id是IDE_johnnwang_11   index就是11 groupName就是IDE_johnnwang
     val (index, groupName) = getIndexAndGroupName(eventId)
+    //获取的是一个fifo的consumer,虽然ConsumerManager 是parallel的
     val consumer = getSchedulerContext.getOrCreateConsumerManager.getOrCreateConsumer(groupName)
     consumer.getRunningEvents.find(_.getId == eventId).orElse(consumer.getConsumeQueue.get(index))
   }

@@ -144,11 +144,11 @@ class FIFOUserConsumer(schedulerContext: SchedulerContext,
           job.setExecutor(executor)
           //executeService（线程池）中提交这个job，也提交一个jobDaemon
           // 并且把futrue放入job中
-          //【所以executor（consuemr中的线程池）一共会提交3类，1.consumer的running（就一个，一直处于循环中）2.queue中提交的job  3.job的守护线程】
+          //【所以executor（consuemr中的线程池）一共会提交3类(同时会返回3类future)，1.consumer的running（一个consumer就有一个，一直处于循环中）2.queue中提交的job  3.job的守护线程】
           //【总结：
-          // 1.job中BDPFutrueTask 拥有1 和 2
-          // 2.consuemr中拥有1
-          // 3.守护线程中自己拥有3
+          // 1.job中BDPFutrueTask 拥有1 ,job的future 属性拥有 2  为了方便killjob? BDPFutrueTask这个意义暂时不知道
+          // 2.consuemr中拥有1  为了方便shutdown?
+          // 3.守护线程中自己拥有3  为了方便killjob?
           // 】
           job.future = executeService.submit(job)
           job.getJobDaemon.foreach(jobDaemon => jobDaemon.future = executeService.submit(jobDaemon))

@@ -26,7 +26,7 @@ import com.webank.wedatasphere.linkis.server.socket.ServerSocket
   * Created by enjoyyin on 2018/1/11.
   */
 class ServerEvent() extends Event {
-  private var id: Int = _
+  private var id: Int = _   //serverEvent的id也是原子自增的id
   private var method: String = _
   private var data: util.Map[String, Object] = _
   private var user: String = _
@@ -46,7 +46,7 @@ class ServerEvent() extends Event {
 class SocketServerEvent(private[controller] val socket: ServerSocket, val message: String) extends Event {
   val serverEvent: ServerEvent = SocketServerEvent.getServerEvent(message)
   socket.user.foreach(serverEvent.setUser)
-  serverEvent.setId(socket.id)
+  serverEvent.setId(socket.id) //serverEvent的id也是原子自增的id
 }
 object SocketServerEvent {
   def getServerEvent(message: String): ServerEvent = BDPJettyServerHelper.gson.fromJson(message, classOf[ServerEvent])
