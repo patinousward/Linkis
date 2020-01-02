@@ -108,7 +108,7 @@ abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends Execu
 
   override def askExecutor(schedulerEvent: SchedulerEvent): Option[Executor] = schedulerEvent match {
     case job: Job =>
-      findUsefulExecutor(job).orElse {
+      findUsefulExecutor(job).orElse { //先找个能用的executor，没有再自己创建
         val executor = createExecutor(job)
         if(executor != null) {
           if(!job.isCompleted){
@@ -134,10 +134,10 @@ abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends Execu
           case t: Throwable => throw t
         } match {
           case Some(e) => executor = Option(e)
-          case _ =>
+          case _ => //这里应该是抛出异常的情况
             if(System.currentTimeMillis - startTime < wait.toMillis) {
-              val interval = math.min(3000, wait.toMillis - System.currentTimeMillis + startTime)
-              getOrCreateEngineManager().waitForIdle(interval)
+              val interval = math.min(3000, wait.toMillis - System.currentTimeMillis + startTime)//这里计算的是wait（等待时间）减上面askExecutor所花费的时间的剩余
+              getOrCreateEngineManager().waitForIdle(interval) //当前线程等待一段时间，时间是interval
             }
         }
       if(warnException != null && executor.isEmpty) throw warnException

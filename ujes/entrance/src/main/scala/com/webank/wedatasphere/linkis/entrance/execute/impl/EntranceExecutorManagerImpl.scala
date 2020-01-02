@@ -42,7 +42,7 @@ class EntranceExecutorManagerImpl(groupFactory: GroupFactory,
 
   override def getOrCreateEngineRequester(): EngineRequester = engineRequester
 
-  override def getOrCreateEngineSelector(): EngineSelector = engineSelector
+  override def getOrCreateEngineSelector(): EngineSelector = engineSelector //SingleEngineSelector
 
   override def getOrCreateEntranceExecutorRulers(): Array[EntranceExecutorRuler] = _entranceExecutorRulers
 
