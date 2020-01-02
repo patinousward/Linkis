@@ -124,7 +124,8 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                             if(fluxSink != null) fluxSink.complete();
                         }
                     };
-                    //创建一个Flux,并且将sink放入监听器
+                    //创建一个Flux,并且将sink对象放入fluxSinkListener中，当listener调用next方法的时候，sink的next方法就会被调用
+                    //当然需要先subscribe，否则create中的函数不会被调用
                     Flux<WebSocketMessage> receives = Flux.create(sink -> {
                         fluxSinkListener.setFluxSink(sink);
                     });
@@ -211,6 +212,7 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                                     proxySessionSend.subscribe();
                                     return getProxyWebSocketSession(gatewayWebSocketSession, serviceInstance).receive()
                                             //then 是flux<> 转Mono<Void>的方法
+                                            //fluxSinkListener::next将数据直接流向了receives中
                                             .doOnNext(WebSocketMessage::retain).doOnNext(fluxSinkListener::next).then();
                                 }
 
@@ -220,6 +222,8 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
                             });
                         }
                     }).doOnComplete(fluxSinkListener::complete).doOnNext(Mono::subscribe).subscribe();
+                    //通过map的循环遍历，直接就将原来websocketsession中的数据转化url后直接放入receives中，通过send方法进行发送
+
                     //这里才是重写方法的返回
                     return gatewayWebSocketSession.send(receives);
                 }
@@ -236,6 +240,13 @@ public class SpringCloudGatewayWebsocketFilter implements GlobalFilter, Ordered 
     public int getOrder() {
         return websocketRoutingFilter.getOrder() - 1; 
     }
+
+
+    /**
+     * springcloud的这个filter貌似只是做了转发，但是服务端返回的数据，这个是怎么处理的呢？封装的wsrespnose和httpresponse
+     * 似乎只是返回一些错误信息之类的回去
+     * @param <T>
+     */
 
     interface FluxSinkListener<T> {
         void setFluxSink(FluxSink<T> fluxSink);
