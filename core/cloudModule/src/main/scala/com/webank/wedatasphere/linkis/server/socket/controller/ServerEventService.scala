@@ -41,6 +41,7 @@ abstract class ServerEventService extends EventListener with Logging {
   val serviceName: String
 
   info("add a socket ServerEventService: " + getClass.getName)
+  //类创建对象的时候就将实现类对象注入listenerBus
   BDPJettyServerHelper.addServerEventService(this)
 
   def onEvent(event: ServerEvent): Message
