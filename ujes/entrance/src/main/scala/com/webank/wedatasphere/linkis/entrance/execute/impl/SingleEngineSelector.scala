@@ -87,6 +87,7 @@ class SingleEngineSelector extends EngineSelector with Logging {
     * @return
     */
   override def lockEngine(engine: EntranceEngine): Option[String] = engine match {
+      //lock engine 失败后,将其加入unhealthy的engine缓存
     case s: SingleEntranceEngine =>
       var lock: Option[String] = None
       info(s"try to ask a lock for $engine.")

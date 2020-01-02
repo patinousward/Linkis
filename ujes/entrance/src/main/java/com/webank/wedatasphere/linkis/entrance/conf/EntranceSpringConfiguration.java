@@ -93,6 +93,9 @@ public class EntranceSpringConfiguration {
     public EntranceEventListenerBus<EntranceEventListener, EntranceEvent> generateEntranceEventListenerBus(){
         EntranceEventListenerBus<EntranceEventListener, EntranceEvent> entranceEventListenerBus = new EntranceEventListenerBus<EntranceEventListener, EntranceEvent>();
         entranceEventListenerBus.start();
+        //这个listenerbus 有2个listener
+        //一个是EntranceWebSocketService,在EntranceServer中调用注册方法  推送日志,job状态和进度给前台,websoket的形式
+        //另一个是EngineManagerImpl  主要用来监听 MissingEngineNotifyEvent  将不健康的engien加入不健康缓存列表
         return entranceEventListenerBus;
     }
 

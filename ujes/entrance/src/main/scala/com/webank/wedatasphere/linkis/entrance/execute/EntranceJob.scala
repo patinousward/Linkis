@@ -43,6 +43,9 @@ abstract class EntranceJob extends LockJob {
   private var params: util.Map[String, Any] = new util.HashMap[String, Any](1)
   private var task:Task = _
   //entranceListenerBus may not exist(entranceListenerBus可能不存在)
+  //Option的好处是直接使用foreach进行处理,不用担心null的问题,实际最多只有1个对象
+  //entranceListenerBus  的作用是实现异步线程之间的通信
+  //父类的eventListenerBus有啥用?  entrance暂时未曾用到
   private var entranceListenerBus: Option[EntranceEventListenerBus[EntranceEventListener, EntranceEvent]] = None
   private var progressInfo:Array[JobProgressInfo] = Array.empty
   private val persistedResultSets = new AtomicInteger(0)
@@ -120,6 +123,7 @@ abstract class EntranceJob extends LockJob {
         this.getProgressListener.foreach(listener => listener.onProgressUpdate(this, 1.0f, Array[JobProgressInfo]()))
       case _ =>
     }
+    //状态翻转后,推送job信息给前台(包含了进度信息?)
     entranceListenerBus.foreach(_.post(EntranceJobEvent(this.getId)))
   }
 
@@ -131,6 +135,7 @@ abstract class EntranceJob extends LockJob {
 
   override protected def transitionCompleted(executeCompleted: CompletedExecuteResponse): Unit = {
     executeCompleted match {
+        //执行结果是失败,并且错误信息包含receiver不存在的异常信息,就将引擎加入不健康的列表
       case error: ErrorExecuteResponse if RPCUtils.isReceiverNotExists(error.t) =>
         entranceListenerBus.foreach(_.post(MissingEngineNotifyEvent(this, error.t, getExecutor)))
       case _ =>
