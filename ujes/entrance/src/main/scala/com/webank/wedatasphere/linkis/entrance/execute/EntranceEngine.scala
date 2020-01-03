@@ -37,6 +37,7 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * Created by enjoyyin on 2018/9/10.
   */
+//id是engineBuilder中的自增id
 abstract class EntranceEngine(id: Long) extends AbstractExecutor(id) with Logging {
 
   private var group: Group = _
@@ -134,9 +135,13 @@ abstract class EntranceEngine(id: Long) extends AbstractExecutor(id) with Loggin
   }
 
   def refreshState(): Unit = sender.ask(RequestEngineStatus(RequestEngineStatus.Status_Overload_Concurrent)) match {
+    //向engine请求负载状况
+    //overload负载  maxMemory,usedMemory,systemCPUUsed
+      //s状态
+      //concurrent 运行job状态 runningTasks: Int, pendingTasks: Int, succeedTasks: Int, failedTasks: Int
       case ResponseEngineStatus(_, s, overload, concurrent, _) =>
         warn(s"heartbeat to engine $toString, refresh its state to ${ExecutorState(s)}.")
-        updateState(state, ExecutorState(s), overload, concurrent)
+        updateState(state, ExecutorState(s), overload, concurrent)  //更新状态
       case warn: WarnException =>
         this.warn(s"heartbeat to engine $serviceInstance caused a warn, refresh its state failed!", warn)
   }

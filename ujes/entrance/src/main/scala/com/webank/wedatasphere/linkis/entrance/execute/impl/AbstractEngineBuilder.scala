@@ -34,7 +34,7 @@ import com.webank.wedatasphere.linkis.scheduler.queue.GroupFactory
   * Created by enjoyyin on 2018/9/26.
   */
 abstract class AbstractEngineBuilder(groupFactory: GroupFactory) extends EngineBuilder with Logging {
-  private val idGenerator = new AtomicLong(0)
+  private val idGenerator = new AtomicLong(0)  //cas自增id就是engine的id的来源
 
   protected def createEngine(id: Long): EntranceEngine
 

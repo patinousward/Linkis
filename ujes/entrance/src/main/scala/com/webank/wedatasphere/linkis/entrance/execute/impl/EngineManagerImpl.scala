@@ -37,10 +37,10 @@ import scala.collection.JavaConversions._
   */
 class EngineManagerImpl extends EngineManager with Logging {
 
-  private val notHealthEngines = new util.HashSet[String]
-  private val idToEngines = new util.HashMap[Long, EntranceEngine]
-  private val instanceToEngines = new util.HashMap[String, EntranceEngine]
-  private val enginesWaitForHeartbeat = new util.ArrayList[EntranceEngine]
+  private val notHealthEngines = new util.HashSet[String] //不健康的engien的instance信息
+  private val idToEngines = new util.HashMap[Long, EntranceEngine]//entrance全局自增id 和engine的对应信息
+  private val instanceToEngines = new util.HashMap[String, EntranceEngine]//ip端口和engine的对应信息
+  private val enginesWaitForHeartbeat = new util.ArrayList[EntranceEngine]  //存放状态为busy的EntranceEngine
 
 
   //Every once in a while, scan the engine that has been in the Busy state to ensure that the state is up to date.
@@ -50,7 +50,7 @@ class EngineManagerImpl extends EngineManager with Logging {
     override def run(): Unit = Utils.tryAndWarn {enginesWaitForHeartbeat.toList.foreach { engine =>
       if(engine.getEngineReturns.nonEmpty) engine.callReconnect()
       else Utils.tryAndWarn{
-        engine.refreshState()
+        engine.refreshState() //??  如果engine.getEngineReturns为空,就刷新状态并且从notHealthEngines中移除?
         if(notHealthEngines.contains(engine.getModuleInstance.getInstance)) {
           notHealthEngines.remove(engine.getModuleInstance.getInstance)
           warn(s"heartbeat to $engine succeed, now change it from not-health list to normal list.")
@@ -62,18 +62,23 @@ class EngineManagerImpl extends EngineManager with Logging {
   //Every once in a while, ask Eureka for the latest engine list and update it to prevent some engines from being broadcasted due to GC or other reasons, or not being consumed in time after being broadcast.
   //每隔一段时间，向Eureka请求最新的引擎列表，进行更新，防止由于GC等原因，导致部分引擎没有广播过来，或广播过来后，没有及时消费
   Utils.defaultScheduler.scheduleAtFixedRate(new Runnable {
+
     override def run(): Unit = Utils.tryAndWarn {
-      val existsInstances = getInstances
+      val existsInstances = getInstances//从DiscoveryClient中获取当前所有engine的信息
       val needDeleteEngines: Iterator[Entry[Long, EntranceEngine]] = if(existsInstances == null || existsInstances.isEmpty)
-        idToEngines.entrySet().iterator
+        idToEngines.entrySet().iterator//如果existsInstances为空,则idToEngines里面的engien都需要删除
       else idToEngines.entrySet().filter(entry => !existsInstances.contains(entry.getValue.getModuleInstance)
+        //如果existsInstances不为空,则existsInstances中没有的删除,或则就算有,但是状态是Completed(Error | Dead | Success)的也删除
         || ExecutorState.isCompleted(entry.getValue.state)).iterator
       //TODO this is special support for eureka
-      needDeleteEngines.filter(entry => System.currentTimeMillis - entry.getValue.getLastActivityTime > 120000).toArray.foreach { entry =>
+      needDeleteEngines.filter(entry => System.currentTimeMillis - entry.getValue.getLastActivityTime > 120000).toArray.foreach {
+        entry =>
         warn(s"delete engine ${entry.getValue}, since it is not exists in Eureka or completed with state ${entry.getValue.state}.")
+          //删除所有缓存中的信息,除了enginesWaitForHeartbeat
         delete(entry.getKey)
       }
       existsInstances.foreach{instance =>
+        //existsInstances中含有,但是instanceToEngines和notHealthEngines中没有的,都需要添加进入
         if(!instanceToEngines.containsKey(instance.getInstance) && !notHealthEngines.contains(instance.getInstance)) instanceToEngines synchronized {
           if(!instanceToEngines.containsKey(instance.getInstance) && !notHealthEngines.contains(instance.getInstance)) {
             warn(s"add a new engine(${instance.getInstance}), since it is not exists in Entrance list.")
@@ -86,7 +91,7 @@ class EngineManagerImpl extends EngineManager with Logging {
   //每隔一段时间，扫描处于un-health状态的engine，如果状态OK了，就重新加入
   Utils.defaultScheduler.scheduleAtFixedRate(new Runnable {
     override def run(): Unit = Utils.tryAndWarn{
-      val existsInstances = getInstances.map(_.getInstance)
+      val existsInstances = getInstances.map(_.getInstance) //获取engine的instance信息
       notHealthEngines.toList.foreach{ instance =>
         notHealthEngines.remove(instance)
         if(existsInstances.contains(instance)) buildAndAddEngine(instance)
@@ -95,9 +100,10 @@ class EngineManagerImpl extends EngineManager with Logging {
   }, 120000, UN_HEALTH_ENGINE_SCAN_TIME.getValue.toLong, TimeUnit.MILLISECONDS)
 
   def buildAndAddEngine(instance: String): Unit = Utils.tryCatch{
+    //eureka中有,但是缓存中没有的engine,发送send信息建立联系后就
     val engine = entranceExecutorManager.getOrCreateEngineBuilder().buildEngine(instance)
     entranceExecutorManager.initialEntranceEngine(engine)
-  }{t =>
+  }{t => //如果抛出warn的信息,就加入notHealthEngines 列表
     notHealthEngines.add(instance)
     warn(s"init engine $instance failed, add it to un-health list.", t)
   }
@@ -119,6 +125,8 @@ class EngineManagerImpl extends EngineManager with Logging {
   override def get(instance: String): Option[EntranceEngine] = Option(instanceToEngines.get(instance))
 
   override def listEngines(op: EntranceEngine => Boolean): Array[EntranceEngine] =
+  //instance是个string 就是ip和端口
+    //EntranceEngine也也有groupname  是真实存在的Engine的 抽象成的对象
     idToEngines.entrySet().map(_.getValue).filter(e => !notHealthEngines.contains(e.getModuleInstance.getInstance) && op(e)).toArray
 
   override def addNotExistsEngines(engine: EntranceEngine*): Unit =
@@ -133,6 +141,7 @@ class EngineManagerImpl extends EngineManager with Logging {
     }
 
   override def delete(id: Long): Unit = if(idToEngines.containsKey(id)) instanceToEngines synchronized {
+    //三个缓存idToEngines,notHealthEngines,instanceToEngines全都删除
     if(idToEngines.containsKey(id)) {
       instanceToEngines.remove(idToEngines.get(id).getModuleInstance.getInstance)
       val engine = idToEngines.remove(id)
