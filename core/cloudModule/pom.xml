@@ -57,7 +57,15 @@
                     <artifactId>jsr311-api</artifactId>
                     <groupId>javax.ws.rs</groupId>
                 </exclusion>
+                <exclusion>
+                    <artifactId>xstream</artifactId>
+                    <groupId>com.thoughtworks.xstream</groupId>
+                </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <artifactId>xstream</artifactId>
+            <groupId>com.thoughtworks.xstream</groupId>
         </dependency>
 
         <dependency>

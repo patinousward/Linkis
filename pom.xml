@@ -135,6 +135,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <dispatch.version>0.11.2</dispatch.version>
         <jsoup.version>1.8.2</jsoup.version>
+        <xstream.core.version>1.4.11.1</xstream.core.version>
     </properties>
 
     <dependencyManagement>
@@ -221,6 +222,11 @@
                 <groupId>commons-collections</groupId>
                 <artifactId>commons-collections</artifactId>
                 <version>3.2.2</version>
+            </dependency>
+            <dependency>
+                <artifactId>xstream</artifactId>
+                <groupId>com.thoughtworks.xstream</groupId>
+                <version>${xstream.core.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
