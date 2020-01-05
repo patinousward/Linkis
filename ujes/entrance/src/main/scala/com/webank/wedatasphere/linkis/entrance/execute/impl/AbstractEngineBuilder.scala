@@ -61,8 +61,10 @@ abstract class AbstractEngineBuilder(groupFactory: GroupFactory) extends EngineB
   override def buildEngine(responseEngineStatus: ResponseEngineStatus): EntranceEngine = responseEngineStatus  match {
     case ResponseEngineStatus(instance, state, overload, concurrent, ResponseEngineInfo(createEntranceInstance, creator, user, _)) =>
       warn(s"receive a new engine $instance for creator $creator, which is created by other entrance $createEntranceInstance.")
+      //SingleEntranceEngine（在springconfiguration中有匿名實現類）
       val engine = createEngine(idGenerator.incrementAndGet())
       engine.setInstance(instance)
+      //groupName   creator_user
       engine.setGroup(groupFactory.getOrCreateGroup(getGroupName(creator, user)))
       engine.setUser(user)
       engine.setCreator(creator)

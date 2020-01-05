@@ -44,7 +44,7 @@ class EngineManagerImpl extends EngineManager with Logging {
 
 
   //Every once in a while, scan the engine that has been in the Busy state to ensure that the state is up to date.
-  //每隔一段时间，扫描一直处于Busy状态的engine，确保状态是最新的
+  //每隔1min，扫描一直处于Busy状态的engine，确保状态是最新的
   Utils.defaultScheduler.scheduleAtFixedRate(new Runnable {
 
     override def run(): Unit = Utils.tryAndWarn {enginesWaitForHeartbeat.toList.foreach { engine =>
@@ -60,7 +60,7 @@ class EngineManagerImpl extends EngineManager with Logging {
     }
   }, 60000, ENGINE_STATUS_HEARTBEAT_TIME.getValue.toLong, TimeUnit.MILLISECONDS)
   //Every once in a while, ask Eureka for the latest engine list and update it to prevent some engines from being broadcasted due to GC or other reasons, or not being consumed in time after being broadcast.
-  //每隔一段时间，向Eureka请求最新的引擎列表，进行更新，防止由于GC等原因，导致部分引擎没有广播过来，或广播过来后，没有及时消费
+  //每隔2min，向Eureka请求最新的引擎列表，进行更新，防止由于GC等原因，导致部分引擎没有广播过来，或广播过来后，没有及时消费
   Utils.defaultScheduler.scheduleAtFixedRate(new Runnable {
 
     override def run(): Unit = Utils.tryAndWarn {
@@ -88,7 +88,7 @@ class EngineManagerImpl extends EngineManager with Logging {
     }
   }, 120000, ENGINE_LIST_FRESH_INTERVAL.getValue.toLong, TimeUnit.MILLISECONDS)
   //Every once in a while, scan the engine in the un-health state, if the state is OK, rejoin
-  //每隔一段时间，扫描处于un-health状态的engine，如果状态OK了，就重新加入
+  //每隔2min，扫描处于un-health状态的engine，如果状态OK了，就重新加入
   Utils.defaultScheduler.scheduleAtFixedRate(new Runnable {
     override def run(): Unit = Utils.tryAndWarn{
       val existsInstances = getInstances.map(_.getInstance) //获取engine的instance信息
@@ -100,19 +100,20 @@ class EngineManagerImpl extends EngineManager with Logging {
   }, 120000, UN_HEALTH_ENGINE_SCAN_TIME.getValue.toLong, TimeUnit.MILLISECONDS)
 
   def buildAndAddEngine(instance: String): Unit = Utils.tryCatch{
-    //eureka中有,但是缓存中没有的engine,发送send信息建立联系后就
+    //eureka中有,但是缓存中没有的engine,发送send信息建立联系后就new初始化engien
     val engine = entranceExecutorManager.getOrCreateEngineBuilder().buildEngine(instance)
     entranceExecutorManager.initialEntranceEngine(engine)
   }{t => //如果抛出warn的信息,就加入notHealthEngines 列表
     notHealthEngines.add(instance)
     warn(s"init engine $instance failed, add it to un-health list.", t)
   }
-
+  //通过discoverClient  获取服务信息
   protected def getInstances: Array[ServiceInstance] = Sender.getInstances(ENGINE_SPRING_APPLICATION_NAME.getValue)
 
   /**
     * The user initializes the operation. When the entance is started for the first time, all the engines are obtained through this method, and the initialization operation is completed.
     * 用户初始化操作，第一次启动entrance时，将通过该方法，拿到所有的engine，完成初始化操作
+    * entrance receiver中的@postConstruct 方法中
     */
   override def readAliveEngines(): Unit = {
     info("begin to read all alive engines for entrance remark.")
@@ -176,6 +177,7 @@ class EngineManagerImpl extends EngineManager with Logging {
       }
   }
 
+  //添加進入非健康名單
   override def onEvent(event: EntranceEvent): Unit = event match {
     case MissingEngineNotifyEvent(job, t, executor) =>
       val source = if(job != null) s"Job($job)" else "<unknown>"

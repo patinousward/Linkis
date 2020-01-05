@@ -31,17 +31,17 @@ import scala.concurrent.duration.Duration
 abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends ExecutorManager with Logging {
   @volatile private var executorListener: Option[ExecutorListener] = None
 
-  def getOrCreateEngineBuilder(): EngineBuilder
+  def getOrCreateEngineBuilder(): EngineBuilder //EngineBuilder单例，用来创建EntranceEngine（是个executor） 的
 
-  def getOrCreateEngineManager(): EngineManager
+  def getOrCreateEngineManager(): EngineManager //EngineManger单例，是EngineManagerImple对象，只是个实现了ExecutorListener（） 和EntranceEventListener（监听unhealthy 引擎的方法）
 
-  def getOrCreateEngineRequester(): EngineRequester
+  def getOrCreateEngineRequester(): EngineRequester //单例EngineRequesterImpl 对象
 
-  def getOrCreateEngineSelector(): EngineSelector
+  def getOrCreateEngineSelector(): EngineSelector //单例SingleEngineSelector
 
-  def getOrCreateEntranceExecutorRulers(): Array[EntranceExecutorRuler]
+  def getOrCreateEntranceExecutorRulers(): Array[EntranceExecutorRuler]//FixedInstanceEntranceExecutorRuler，和ExceptInstanceEntranceExecutorRuler的数组的单例
 
-  def getOrCreateInterceptors(): Array[ExecuteRequestInterceptor]
+  def getOrCreateInterceptors(): Array[ExecuteRequestInterceptor] //ExecuteRequestInterceptor的实现类的数组，以object类实现的单例
 
   private def getExecutorListeners: Array[ExecutorListener] =
     executorListener.map(l => Array(getOrCreateEngineManager(), l)).getOrElse(Array(getOrCreateEngineManager()))
@@ -50,6 +50,7 @@ abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends Execu
     this.executorListener = Option(executorListener)
 
   def initialEntranceEngine(engine: EntranceEngine): Unit = {
+    //entrance 中，这个初始化是None
     executorListener.map(_ => new ExecutorListener {
       override def onExecutorCreated(executor: Executor): Unit = getExecutorListeners.foreach(_.onExecutorCreated(executor))
       override def onExecutorCompleted(executor: Executor, message: String): Unit = getExecutorListeners.foreach(_.onExecutorCompleted(executor, message))

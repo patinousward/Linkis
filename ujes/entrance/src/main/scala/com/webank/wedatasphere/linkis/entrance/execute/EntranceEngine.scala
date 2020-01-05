@@ -38,6 +38,10 @@ import scala.collection.mutable.ArrayBuffer
   * Created by enjoyyin on 2018/9/10.
   */
 //id是engineBuilder中的自增id
+//entrance engine初始化對象的時候，狀態是starting
+
+
+//Entrance Engine 应该该名为EntranceExecutor才对！
 abstract class EntranceEngine(id: Long) extends AbstractExecutor(id) with Logging {
 
   private var group: Group = _

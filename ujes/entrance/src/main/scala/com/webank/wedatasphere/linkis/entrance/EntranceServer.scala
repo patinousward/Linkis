@@ -126,6 +126,7 @@ abstract class EntranceServer extends Logging {
       if(entranceWebSocketService.isEmpty) {
         entranceWebSocketService = Some(new EntranceWebSocketService)
         entranceWebSocketService.foreach(_.setEntranceServer(this))
+        //getEntranceContext.getOrCreateEventListenerBus  是自动注入的，把entranceWebSocketService listener  注入到listenerBus中
         entranceWebSocketService.foreach(getEntranceContext.getOrCreateEventListenerBus.addListener)
       }
     }

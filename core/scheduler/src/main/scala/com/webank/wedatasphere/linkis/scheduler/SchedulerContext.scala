@@ -22,6 +22,11 @@ import com.webank.wedatasphere.linkis.scheduler.executer.ExecutorManager
 import com.webank.wedatasphere.linkis.scheduler.queue.fifoqueue.FIFOSchedulerContextImpl
 import com.webank.wedatasphere.linkis.scheduler.queue.{ConsumerManager, GroupFactory}
 
+
+/*schedulercontext--》consumermanager--》consumer--》job（run）---》executor 的execute方法得到结果
+
+---》executormanager--》（askExecute  找到可用的executor）*/
+
 /**
   * Created by enjoyyin on 2018/9/1.
   */

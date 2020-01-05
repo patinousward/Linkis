@@ -82,6 +82,7 @@ public class DefaultEntranceContext extends EntranceContext {
         persistenceManager.setEntranceContext(this);
         logManager.setEntranceContext(this);
         if(scheduler.getSchedulerContext().getOrCreateExecutorManager() instanceof EntranceExecutorManager) {
+            //listenerBus（自动注入的） 添加entranceEngienManager作为listener
             listenerBus.addListener(((EntranceExecutorManager) scheduler.getSchedulerContext().getOrCreateExecutorManager()).getOrCreateEngineManager());
         }
     }

@@ -23,6 +23,7 @@ import com.webank.wedatasphere.linkis.scheduler.executer.{ConcurrentTaskOperateS
 /**
   * Created by enjoyyin on 2018/10/30.
   */
+//暂时没用上
 class ConcurrentEntranceEngine(id: Long) extends EntranceEngine(id) with ConcurrentTaskOperateSupport {
 
   override protected def callExecute(request: RequestTask): EngineExecuteAsynReturn = whenAvailable {

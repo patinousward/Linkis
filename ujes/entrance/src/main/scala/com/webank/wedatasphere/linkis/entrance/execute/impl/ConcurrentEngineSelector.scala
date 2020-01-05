@@ -23,6 +23,7 @@ import com.webank.wedatasphere.linkis.scheduler.executer.ExecutorState
 /**
   * Created by enjoyyin on 2018/10/30.
   */
+//暂时没用上
 class ConcurrentEngineSelector extends EngineSelector {
 
   private val maxParallelismJobs = EntranceConfiguration.CONCURRENT_ENGINE_MAX_PARALLELISM.acquireNew
