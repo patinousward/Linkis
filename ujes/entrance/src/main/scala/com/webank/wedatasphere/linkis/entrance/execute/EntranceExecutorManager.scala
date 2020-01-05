@@ -29,6 +29,7 @@ import scala.concurrent.duration.Duration
   * Created by enjoyyin on 2018/9/10.
   */
 abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends ExecutorManager with Logging {
+  //目前这里没有注入任何值
   @volatile private var executorListener: Option[ExecutorListener] = None
 
   def getOrCreateEngineBuilder(): EngineBuilder //EngineBuilder单例，用来创建EntranceEngine（是个executor） 的
@@ -37,13 +38,14 @@ abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends Execu
 
   def getOrCreateEngineRequester(): EngineRequester //单例EngineRequesterImpl 对象
 
-  def getOrCreateEngineSelector(): EngineSelector //单例SingleEngineSelector
+  def getOrCreateEngineSelector(): EngineSelector //单例SingleEngineSelector,实现了EngineLockListener  用来锁引擎的
 
   def getOrCreateEntranceExecutorRulers(): Array[EntranceExecutorRuler]//FixedInstanceEntranceExecutorRuler，和ExceptInstanceEntranceExecutorRuler的数组的单例
 
   def getOrCreateInterceptors(): Array[ExecuteRequestInterceptor] //ExecuteRequestInterceptor的实现类的数组，以object类实现的单例
 
   private def getExecutorListeners: Array[ExecutorListener] =
+    //从getOrCreateEngineManager()中进行返回一个EngineMangerImpl的单例
     executorListener.map(l => Array(getOrCreateEngineManager(), l)).getOrElse(Array(getOrCreateEngineManager()))
 
   override def setExecutorListener(executorListener: ExecutorListener): Unit =
@@ -56,9 +58,12 @@ abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends Execu
       override def onExecutorCompleted(executor: Executor, message: String): Unit = getExecutorListeners.foreach(_.onExecutorCompleted(executor, message))
       override def onExecutorStateChanged(executor: Executor, fromState: ExecutorState, toState: ExecutorState): Unit =
         getExecutorListeners.foreach(_.onExecutorStateChanged(executor, fromState, toState))
+      //每个EntranceEngine 都会 有EngineMangerImpl这个单例的listener
     }).orElse(Some(getOrCreateEngineManager())).foreach(engine.setExecutorListener)
+    //放入拦截器和engine选择器
     engine.setInterceptors(getOrCreateInterceptors())
     engine.setEngineLockListener(getOrCreateEngineSelector())
+    //调用EngineMangerImpl中的onExecutorCreated的方法
     getExecutorListeners.foreach(_.onExecutorCreated(engine))
   }
 
