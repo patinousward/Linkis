@@ -37,7 +37,7 @@ class SingleEntranceEngine(id: Long) extends EntranceEngine(id) with SingleTaskO
     if(!isIdle || lock.isDefined) return false
     lockOp(sender).exists { lock =>  //这里exists好像没啥用，最后都是返回true
       this.lock = Some(lock)
-      //engineLockListener  就是SingleEngineSelector
+      //engineLockListener  就是SingleEngineSelector 中加入缓存key是engine，value是（lock，当前时间戳）
       engineLockListener.foreach(_.onEngineLocked(this, lock))
       true
     }
@@ -68,14 +68,20 @@ class SingleEntranceEngine(id: Long) extends EntranceEngine(id) with SingleTaskO
     if(engineReturns.isEmpty) super.changeState(fromState, toState)
 
   override protected def callExecute(request: RequestTask): EngineExecuteAsynReturn = if(lock.contains(request.getLock)) ensureIdle({
+    //将engine状态转为busy，这里并不会去rpc请求engine也变成busy，但是因为之前有lock，所以也没关系
     transition(Busy)
+    //提交执行
     val response = sender.ask(request)
     engineLockListener.foreach(_.onEngineLockUsed(this))
     response match {
+        //将response封装为EngineExecuteAsynReturn对象进行返回
       case ResponseTaskExecute(execId) => new EngineExecuteAsynReturn(request, getModuleInstance.getInstance, execId, _ => {
+        //释放lock
         lock = None
         info("remove execId-" + execId + " with instance " + getModuleInstance.getInstance)
+        //清除掉上次执行的engineReturns
         engineReturns.clear()
+        //将engine状态转为idle
         whenBusy(transition(Idle))
       })
     }

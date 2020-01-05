@@ -70,6 +70,7 @@ public class EntranceExecutionJob extends EntranceJob implements LogHandler {
 
         @Override
         public String lock() {
+            //将job中的lock返回
             return getLock();
         }
 
@@ -187,6 +188,8 @@ public class EntranceExecutionJob extends EntranceJob implements LogHandler {
     }
 
     @Override
+    //job内部调用的创建ExecuteRequest，因为这个类在Job内部，在调用lock（）方法的时候，将job内部的lock直接返回了
+    //可以看出内部类的作用可以封装一些方法和信息
     public ExecuteRequest jobToExecuteRequest() {
         EntranceExecuteRequest executeRequest;
         RequestPersistTask task = getRequestPersistTask();

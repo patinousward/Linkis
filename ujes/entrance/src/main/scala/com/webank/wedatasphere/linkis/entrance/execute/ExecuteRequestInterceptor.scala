@@ -32,11 +32,12 @@ trait ExecuteRequestInterceptor {
 object LockExecuteRequestInterceptor extends ExecuteRequestInterceptor {
   override def apply(requestTask: RequestTask, executeRequest: ExecuteRequest): RequestTask = executeRequest match {
     case lock: LockExecuteRequest =>
-      val rq = if(requestTask == null) {
+      val rq = if(requestTask == null) {  //传的就是null
         val requestTask = new RequestTaskExecute
         requestTask.setCode(executeRequest.code)
         requestTask
       } else requestTask
+      //
       rq.setLock(lock.lock)
       rq
     case _ => requestTask

@@ -59,6 +59,7 @@ abstract class AbstractExecutor(id: Long) extends Executor with Logging {
         if(transitionState) transition(Busy)
         return Utils.tryFinally(f){
           if(transitionState) transition(Idle)
+          //entrance的callback没有方法
           callback()
         }
       }

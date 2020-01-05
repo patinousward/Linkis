@@ -69,7 +69,9 @@ abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends Execu
 
   override protected def createExecutor(schedulerEvent: SchedulerEvent): EntranceEngine = schedulerEvent match {
     case job: Job =>
+      //请求一个性的engine
       val newEngine = getOrCreateEngineRequester().request(job)
+      //SingleEntranceEngine对象的一些其他信息的补充，放入EngineMangerImpl的idToEngines缓存等等
       newEngine.foreach(initialEntranceEngine)
       //There may be a situation where the broadcast is faster than the return. Here, you need to get the EntranceEngine that is actually stored in the EngineManager.
       //可能存在广播比返回快的情况，这里需拿到实际存入EngineManager的EntranceEngine
@@ -122,7 +124,7 @@ abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends Execu
       findUsefulExecutor(job).orElse { //先找个能用的executor，没有再自己创建
         val executor = createExecutor(job)
         if(executor != null) {
-          if(!job.isCompleted){
+          if(!job.isCompleted){ //都还没拿到execute，这些complete判断有用吗
             val lock = getOrCreateEngineSelector().lockEngine(executor)
             setLock(lock, job)
             lock.map(_ => executor)

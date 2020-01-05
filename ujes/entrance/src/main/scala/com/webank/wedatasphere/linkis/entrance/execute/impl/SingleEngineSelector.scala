@@ -50,8 +50,14 @@ class SingleEngineSelector extends EngineSelector with Logging {
       val lock = entry.getValue._1
       if(System.currentTimeMillis - startTime >= ENGINE_LOCK_MAX_HOLDER_TIME.getValue.toLong) {
         warn(s"try to unlock the lock of the engine $engine, since it is expired for a long time.")
+        //超时的话，releaseLock，将lock变为None，再rpc自动请求释放锁
+        //说明所谓的lock只是个string对象
+        //lock的时候，rpc请求，然后将stirng赋值给lock对象
+        //释放有2种，一种是这里超时释放，因为engine种lock也没释放，所以要发送rpc请求过去，再将lock对象清空
+        //另外一种就算返回结果后直接在entrance将lock变为None，Engine那边应该是自己处理的
         Utils.tryCatch(engine.releaseLock{ sender =>
           sender.send(RequestEngineUnlock(engine.getModuleInstance.getInstance, lock))
+          //engineToLockAndCreateTimes中移除对象
           onEngineLockUsed(engine)
           true
         }){ t =>

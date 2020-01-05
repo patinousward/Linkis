@@ -47,9 +47,11 @@ abstract class EngineRequester extends Logging {
     this.executorListener = Some(executorListener)
 
   def request(job: Job): Option[EntranceEngine] = {
+    //封装TimeoutRequestNewEngine对象
     val requestEngine = createRequestEngine(job)
     val engineInitThread = getSender.ask(requestEngine) match {
       case ResponseNewEngineStatus(instance, responseEngineStatus) =>
+        //这里的notify还是不知道为何要在这里notify，感觉和之前的bug有关，另外一个用户notify了上一个用户的线程？
         new EngineInitThread(instance, requestEngine).notifyThread(responseEngineStatus)
       case r: ResponseNewEngine =>
         new EngineInitThread(r.instance, requestEngine).notifyThread(r)
@@ -57,7 +59,9 @@ abstract class EngineRequester extends Logging {
     }
     info(s"request a new engine for ${requestEngine.user} which requested by ${requestEngine.creator}, wait for it initial.")
     pushLog(job, LogUtils.generateInfo("Background is starting a new engine for you, it may take several seconds, please wait"))
+    //engineInitThreads缓存中加入，key是instance，value是EngineInitThread
     engineInitThreads.put(engineInitThread.instance, engineInitThread)
+    //最后无论如何都进行释放缓存，这里在wait，等待EntranceReceiver中的返回进行notify
     Utils.tryFinally(engineInitThread.waitUntilInited())(engineInitThreads.remove(engineInitThread.instance))
     info(s"the engine for user ${requestEngine.user} which requested by ${requestEngine.creator} has inited.")
     pushLog(job, LogUtils.generateInfo("Congratulations! Your new engine has started successfully"))
@@ -138,6 +142,7 @@ abstract class EngineRequester extends Logging {
       }
       initError = Some(new EntranceErrorException(20011, s"Request new engine timeout for user ${requestEngine.user}, ${requestEngine.creator}!(为用户${requestEngine.user},${requestEngine.creator}请求新引擎超时!)"))
     }
+    //engine不为null，或者，initError不为空，说明启动引擎有错误
     def isCompleted = engine != null || initError.isDefined
   }
 

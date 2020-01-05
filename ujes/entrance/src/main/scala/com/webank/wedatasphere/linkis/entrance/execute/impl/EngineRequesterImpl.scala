@@ -37,6 +37,7 @@ class EngineRequesterImpl extends EngineRequester {
   override protected def createRequestEngine(job: Job): RequestEngine = job match {
       //TODO The maximum timeout period created should be read from the database(TODO 创建的最大超时时间，应该从数据库读取)
     case entranceJob: EntranceJob =>
+      //请求rpc，从configuration中获取createTimeWait，封装为一个TimeoutRequestNewEngine对象
       val sender = Sender.getSender(EntranceConfiguration.CLOUD_CONSOLE_CONFIGURATION_SPRING_APPLICATION_NAME.getValue)
       val requestQueryGlobalConfig = RequestQueryGlobalConfig(entranceJob.getUser)
       val responseQueryGlobalConfig = sender.ask(requestQueryGlobalConfig).asInstanceOf[ResponseQueryConfig]

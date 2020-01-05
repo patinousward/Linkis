@@ -101,10 +101,13 @@ abstract class EntranceEngine(id: Long) extends AbstractExecutor(id) with Loggin
   private[execute] def getEngineReturns = engineReturns.toArray
 
   override def execute(executeRequest: ExecuteRequest): ExecuteResponse = {
+    //executeRequest：EntranceExecuteRequest
     var request: RequestTask = null
+    //这里没利用返回值，等于无用
     interceptors.foreach(in => request = in.apply(request, executeRequest))
     //TODO The implementation of the HA function, you need to think about it again.(HA功能的实现，还需要再考虑一下)
     val engineReturn = if(request.getProperties != null &&
+      //这里RequestTask只是 Array(LockExecuteRequestInterceptor, JobExecuteRequestInterceptor)，所以进入false
       request.getProperties.containsKey(ReconnectExecuteRequestInterceptor.PROPERTY_EXEC_ID)) ensureBusy {
       sender.ask(RequestTaskStatus(request.getProperties.get(ReconnectExecuteRequestInterceptor.PROPERTY_EXEC_ID).toString)) match {
         case ResponseTaskStatus(execId, _) =>
@@ -119,6 +122,7 @@ abstract class EntranceEngine(id: Long) extends AbstractExecutor(id) with Loggin
 
   protected def callExecute(request: RequestTask): EngineExecuteAsynReturn
 
+  //心跳和engine保持联系，主要用于长时间处于busy状态的engine
   def callReconnect(): Unit = whenBusy {
     engineReturns.filter(_.getLastNotifyTime < System.currentTimeMillis - JOB_STATUS_HEARTBEAT_TIME.getValue.toLong).foreach { er =>
      Utils.tryCatch(sender.ask(RequestTaskStatus(er.execId)) match {
@@ -200,8 +204,11 @@ class EngineExecuteAsynReturn(request: RequestTask, val instance: String,
     }
     response.foreach{ r =>
       getJobId.foreach(id => info("Job " + id + " with execId-" + execId + " from engine " + instance + " completed with state " + r))
+      //callback的话主要是释放锁SingleEntranceEngine中的，清除上次的结果集，引擎状态翻转为idle
       callback(this)
+      //如果notifyJob为null 则说明状态尚未翻转，先等一会，否则会导致异步比同步快，这里notifyJob还是null，然后报空针异常，状态也没法翻转
       if(notifyJob == null) this synchronized(while(notifyJob == null) this.wait(1000))
+      //job的状态的翻转（和上面engine状态的翻转不一样）
       notifyJob(r)
     }
   }

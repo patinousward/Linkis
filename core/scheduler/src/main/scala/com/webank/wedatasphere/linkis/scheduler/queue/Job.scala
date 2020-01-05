@@ -252,6 +252,8 @@ abstract class Job extends Runnable with SchedulerEvent with Closeable with Logg
       return
     }
     //executor.execute 只是发个rpc请求给EM(entrance中的逻辑)
+    //jobToExecuteRequest 中调用了这个方法，execute的参数是jobToExecuteRequest方法的返回值
+    //这个返回值在entrance中是EntranceExecuteRequest
     val rs = Utils.tryCatch(executor.execute(jobToExecuteRequest)){
       case t: InterruptedException =>
         warn(s"job $toString is interrupted by user!", t)
@@ -265,6 +267,7 @@ abstract class Job extends Runnable with SchedulerEvent with Closeable with Logg
         transitionCompleted(r)
       case r: IncompleteExecuteResponse =>
         transitionCompleted(ErrorExecuteResponse(if(StringUtils.isNotEmpty(r.message)) r.message else "incomplete code.", null))
+        //一般主要是AsynReturnExecuteResponse 对象
       case r: AsynReturnExecuteResponse =>
         r.notify(r1 => {
           val realRS = if(interrupt) errorExecuteResponse else r1 match {
