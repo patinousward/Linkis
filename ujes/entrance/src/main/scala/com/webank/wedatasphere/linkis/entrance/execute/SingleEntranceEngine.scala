@@ -27,14 +27,17 @@ import com.webank.wedatasphere.linkis.scheduler.queue.SchedulerEventState.Failed
 /**
   * Created by enjoyyin on 2018/10/30.
   */
+//这个是entrance创建的EntranceEngine
 class SingleEntranceEngine(id: Long) extends EntranceEngine(id) with SingleTaskOperateSupport {
 
   private var lock: Option[String] = None
-
+  //尝试lock   idle或者lock为None的时候
+  //lock有值，或者非idle的情况下直接返回false
   def tryLock(lockOp: Sender => Option[String]): Boolean = if(!isIdle || lock.isDefined) false else synchronized {
     if(!isIdle || lock.isDefined) return false
-    lockOp(sender).exists { lock =>
+    lockOp(sender).exists { lock =>  //这里exists好像没啥用，最后都是返回true
       this.lock = Some(lock)
+      //engineLockListener  就是SingleEngineSelector
       engineLockListener.foreach(_.onEngineLocked(this, lock))
       true
     }

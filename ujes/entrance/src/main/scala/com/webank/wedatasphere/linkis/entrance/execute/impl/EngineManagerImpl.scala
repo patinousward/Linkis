@@ -129,6 +129,9 @@ class EngineManagerImpl extends EngineManager with Logging {
   //instance是个string 就是ip和端口
     //EntranceEngine也也有groupname  是真实存在的Engine的 抽象成的对象
     idToEngines.entrySet().map(_.getValue).filter(e => !notHealthEngines.contains(e.getModuleInstance.getInstance) && op(e)).toArray
+
+
+
   //缓存中不存在（id 和instance toEngines 2个缓存）中就加入
   override def addNotExistsEngines(engine: EntranceEngine*): Unit =
     engine.foreach{e =>

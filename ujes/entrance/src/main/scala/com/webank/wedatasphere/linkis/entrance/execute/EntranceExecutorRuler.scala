@@ -38,7 +38,7 @@ trait EntranceExecutorRuler {
 }
 trait AbstractEntranceExecutorRuler extends EntranceExecutorRuler {
   private var engineManager: EngineManager = _
-  protected val specialKey: String
+  protected val specialKey: String  //specialkey  fixedInstance和exceptInstances 2种
 
   override def setEngineManager(engineManager: EngineManager): Unit = this.engineManager = engineManager
 
@@ -46,11 +46,15 @@ trait AbstractEntranceExecutorRuler extends EntranceExecutorRuler {
 
   override def rule(engines: Array[EntranceEngine], job: Job): Array[EntranceEngine] = job match {
     case entranceJob: EntranceJob =>
+      //从params中获取special参数
       val specialMap = TaskUtils.getSpecialMap(entranceJob.getParams)
       val specialValue = specialMap.get(specialKey)
+      //special种参数包含相应的ruler的key的话，就用当前的ruler进行判断
       if(specialValue != null && StringUtils.isNotBlank(specialValue.toString)) {
         val log = new java.lang.StringBuilder
+        //过滤engines
         val es = rule(engines, specialValue, log)
+        //过滤掉后推送日志
         if(log.length() > 0) job.getLogListener.foreach(_.onLogUpdate(job, LogUtils.generateSystemInfo(log.toString)))
         es
       }
@@ -68,8 +72,9 @@ class FixedInstanceEntranceExecutorRuler extends AbstractEntranceExecutorRuler w
   override val specialKey: String = FixedInstanceEntranceExecutorRuler.FIXED_INSTANCE
   override def rule(engines: Array[EntranceEngine], specialValue: Any, log: java.lang.StringBuilder): Array[EntranceEngine] = {
     log.append(s"You have enabled the fixed execution engine function! This time will be submitted to the engine $specialValue.(您开启了固定执行引擎功能！本次将提交给引擎$specialValue。)")
+    //FixedInstanceEntranceExecutorRuler 策略是engine的instance和请求参数params种的一致
     val es = engines.filter(_.getModuleInstance.getInstance == specialValue)
-    if(es.isEmpty && getEngineManager.get(specialValue.toString).isEmpty)
+    if(es.isEmpty && getEngineManager.get(specialValue.toString).isEmpty)//判断到底是engine不存在，还是处于busy状态，抛出相应的不同的信息
       throw new EntranceErrorException(28001, s"The last used engine $specialValue no longer exists, and this fixed execution engine operation cannot be completed!(沿用上次的引擎$specialValue 已不存在，无法完成本次固定执行引擎操作！)")
     else if(es.isEmpty) {
       throw new WaitForNextAskExecutorException(s"Please note: the execution engine ${specialValue} is currently not idle, waiting for the state to flip...(请注意：执行引擎${specialValue}目前不处于空闲状态，等待状态翻转...)")
@@ -83,6 +88,7 @@ object FixedInstanceEntranceExecutorRuler {
 }
 @Component
 class ExceptInstanceEntranceExecutorRuler extends AbstractEntranceExecutorRuler {
+  //排除特定的引擎
   override val specialKey: String = ExceptInstanceEntranceExecutorRuler.EXCEPT_INSTANCES
   override def rule(engines: Array[EntranceEngine], specialValue: Any, log: java.lang.StringBuilder): Array[EntranceEngine] = {
     log.append("Please note: This submitted script will exclude the following engines(请注意：本次提交的脚本，将排除以下引擎)：" + specialValue)

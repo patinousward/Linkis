@@ -71,11 +71,15 @@ class SingleEngineSelector extends EngineSelector with Logging {
     * @return
     */
   override def chooseEngine(engines: Array[EntranceEngine]): Option[EntranceEngine] = {
+    //  EntranceEngine状态为idle并且 engineToLockAndCreateTimes 中 不包含这个engine，就算说没有上锁
     val usefulEngines = engines.filter(e => e.state == ExecutorState.Idle && !engineToLockAndCreateTimes.containsKey(e))
+    //按负载进行排序
     val sortedEngines = usefulEngines.filter(_.getOverloadInfo.isDefined).sortBy(_.getOverloadInfo.map(getOverload).get)
+    //unknownEngines没有负载的引擎
     val unknownEngines = usefulEngines.filter(_.getOverloadInfo.isEmpty)
-    if(unknownEngines.isEmpty && sortedEngines.isEmpty) None
-    else if(unknownEngines.isEmpty) Option(sortedEngines(0))
+    if(unknownEngines.isEmpty && sortedEngines.isEmpty) None //sortedEngines 和unknownEngines 都为empty的话，直接返回None
+    else if(unknownEngines.isEmpty) Option(sortedEngines(0))//unknownEngines为空的话，选择sortedEngines的第一个
+      //sortedEngines为空，或sortedEngines的第一个负载大于70%，unknownEngines中随机选择一个
     else if(sortedEngines.isEmpty || sortedEngines(0).getOverloadInfo.map(getOverload).exists(_ > 0.7)) {
       Option(unknownEngines((math.random * unknownEngines.length).toInt))
     } else Option(sortedEngines(0))
@@ -92,7 +96,9 @@ class SingleEngineSelector extends EngineSelector with Logging {
       var lock: Option[String] = None
       info(s"try to ask a lock for $engine.")
       s.tryLock(sender => Utils.tryThrow {
+        //rpc请求锁引擎
         sender.ask(RequestEngineLock(engine.getModuleInstance.getInstance, ENGINE_LOCK_MAX_HOLDER_TIME.getValue.toLong)) match {
+            //这个l是engine返回的一个String类型的lock
           case ResponseEngineLock(l) =>
             info(s"locked a lock $l for $engine.")
             lock = Some(l)
@@ -106,6 +112,7 @@ class SingleEngineSelector extends EngineSelector with Logging {
             None
         }
       } { t =>
+        //没锁住，而且异常是特定的，或者异常信息包含一些特定的字符，就会加入unhealthy的列表
           if(RPCUtils.isReceiverNotExists(t)) {
             warn(s"lock $engine failed, I lost its connection, now post it to entranceEventListenerBus and notify others.", t)
             entranceEventListenerBus.foreach(_.post(MissingEngineNotifyEvent(null, t, engine)))

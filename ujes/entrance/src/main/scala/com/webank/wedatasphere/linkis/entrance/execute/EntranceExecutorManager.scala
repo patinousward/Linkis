@@ -83,30 +83,35 @@ abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends Execu
 
   protected def findExecutors(job: Job): Array[EntranceEngine] = {
     val groupName = groupFactory.getGroupNameByEvent(job)
-    //logger.info(s"${job.getId} groupName is ${groupName}")
+
     var engines = getOrCreateEngineManager().listEngines(_.getGroup.getGroupName == groupName)
-    //logger.info(s"in findExecutors fun engines is $engines")
+
     getOrCreateEntranceExecutorRulers().foreach(ruler => engines = ruler.rule(engines, job))
-    //logger.info(s"after findExecutors fun engines is $engines")
+
     engines
   }
 
   private def findUsefulExecutor(job: Job): Option[Executor] = {
     val engines = findExecutors(job).toBuffer
     if(engines.isEmpty) {
+      //没找到engine
       return None
     }
+    //找到了engine
     var engine: Option[EntranceEngine] = None
     var lock: Option[String] = None
     while(lock.isEmpty && engines.nonEmpty) {
+      //使用engine选择器去进一步选择SingleEngineSelector
       engine = getOrCreateEngineSelector().chooseEngine(engines.toArray)
       var ruleEngines = engine.map(Array(_)).getOrElse(Array.empty)
+      //？？这个findExecutors中不是已经过滤了吗
       getOrCreateEntranceExecutorRulers().foreach(ruler => ruleEngines = ruler.rule(ruleEngines, job))
       if(engine.isEmpty) {
         return None
       }
+      //selecttor中去锁定这个engine
       ruleEngines.foreach(e => lock = getOrCreateEngineSelector().lockEngine(e))
-      engine.foreach(engines -= _)
+      engine.foreach(engines -= _)  //这里-= 单纯是为了推出while循环
     }
     setLock(lock, job)
     lock.flatMap(_ => engine)
