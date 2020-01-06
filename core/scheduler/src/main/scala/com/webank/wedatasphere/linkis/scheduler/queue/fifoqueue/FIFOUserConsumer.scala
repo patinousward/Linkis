@@ -91,6 +91,7 @@ class FIFOUserConsumer(schedulerContext: SchedulerContext,
     var isRetryJob = false
     var event: Option[SchedulerEvent] = None
     def getWaitForRetryEvent: Option[SchedulerEvent] = {
+      //如果队列中没值,就会去runningjob中寻找isJobCanRetry为true的job进行提交
       val waitForRetryJobs = runningJobs.filter(job => job != null && job.isJobCanRetry)
       waitForRetryJobs.find{job =>
         isRetryJob = Utils.tryCatch(job.turnToRetry()){ t =>

@@ -194,6 +194,7 @@ abstract class Job extends Runnable with SchedulerEvent with Closeable with Logg
         if(!interrupt) Utils.tryAndWarnMsg(transition(Succeed))(s"update Job $toString from $state to Succeed failed.")
         else transitionCompleted(errorExecuteResponse)
       case e: ErrorExecuteResponse =>
+        //job执行出错(engine抛出retry异常,或则receiver失败),翻转状态为retry
         val canRetry = Utils.tryCatch(isJobShouldRetry(e)) {t =>
           error(s"Job $toString failed to get the retry information!", t)
           Utils.tryAndWarn(logListener.foreach(_.onLogUpdate(this, LogUtils.generateERROR("failed to get the retry information! " + ExceptionUtils.getFullStackTrace(t)))))
@@ -223,6 +224,7 @@ abstract class Job extends Runnable with SchedulerEvent with Closeable with Logg
         //目前这个异常只有sparkEngine会抛出Spark application sc has already stopped, please restart it.
       case _ => false
     })
+  //判断是否状态为retry,并且有没达到了重试的次数,达到了就直接翻转为failed,并且返回false
   final def isJobCanRetry: Boolean = if(!isJobSupportRetry || getState != WaitForRetry) false else synchronized {
     if(getState == WaitForRetry && (getMaxRetryNum < 1 || retryNum < getMaxRetryNum)) true
     else if(WaitForRetry == getState && getMaxRetryNum > 0 && retryNum >= getMaxRetryNum) {
@@ -231,6 +233,7 @@ abstract class Job extends Runnable with SchedulerEvent with Closeable with Logg
       false
     } else false
   }
+  //fifoconsuemr提交前,进行状态转为scheduler,并且retryNum +1
   final def turnToRetry(): Boolean = if(!isJobSupportRetry || getState != WaitForRetry) false else synchronized (Utils.tryThrow {
     if(isJobCanRetry) {
       transition(Scheduled)
