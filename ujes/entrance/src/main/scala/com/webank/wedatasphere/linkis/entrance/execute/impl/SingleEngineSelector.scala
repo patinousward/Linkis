@@ -110,6 +110,7 @@ class SingleEngineSelector extends EngineSelector with Logging {
             info(s"locked a lock $l for $engine.")
             lock = Some(l)
             lock
+            //如果时返回ResponseEngineStatus,说明lockEngien失败了,engine还在busy状态,这里翻转下EnranceEngine的状态,并且返回None
           case ResponseEngineStatus(instance, state, overload, concurrent, _) =>
             info(s"request lock failed, transition engine $instance states old state:$state.")
             engine.updateState(ExecutorState.Idle, ExecutorState.apply(state), overload, concurrent)
