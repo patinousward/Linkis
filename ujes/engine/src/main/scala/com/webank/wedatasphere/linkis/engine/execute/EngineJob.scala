@@ -33,7 +33,7 @@ class CommonEngineJob extends EngineJob with SyncSenderContainer {
   def getRequestTask = request
 
 
-  override def isJobSupportRetry: Boolean = false
+  override def isJobSupportRetry: Boolean = false   //engineJob不支持retry
 
   override protected def jobToExecuteRequest: ExecuteRequest = {
     if (request.getProperties.containsKey("runType") && request.getProperties.containsKey(RequestTask.RESULT_SET_STORE_PATH))

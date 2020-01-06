@@ -214,12 +214,13 @@ abstract class Job extends Runnable with SchedulerEvent with Closeable with Logg
   }
   def isJobSupportRetry: Boolean = true
   def getRetryNum = retryNum
-  protected def getMaxRetryNum: Int = 2
+  protected def getMaxRetryNum: Int = 2  //最大重试次数为2
   protected def isJobShouldRetry(errorExecuteResponse: ErrorExecuteResponse): Boolean =
     isJobSupportRetry && errorExecuteResponse != null && (errorExecuteResponse.t match {
       case t: DWCRetryException =>
         warn(s"Job $toString is desired to retry.", t)
-        t.getErrCode == DWCJobRetryException.JOB_RETRY_ERROR_CODE
+        t.getErrCode == DWCJobRetryException.JOB_RETRY_ERROR_CODE  //DWCJobRetryException 这种异常才能retry
+        //目前这个异常只有sparkEngine会抛出Spark application sc has already stopped, please restart it.
       case _ => false
     })
   final def isJobCanRetry: Boolean = if(!isJobSupportRetry || getState != WaitForRetry) false else synchronized {

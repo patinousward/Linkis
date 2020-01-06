@@ -145,9 +145,10 @@ abstract class EntranceJob extends LockJob {
     }
     super.transitionCompleted(executeCompleted)
   }
-
+  //isJobSupportRetry恒为true
   override protected def isJobShouldRetry(errorExecuteResponse: ErrorExecuteResponse): Boolean = isJobSupportRetry && errorExecuteResponse != null &&
     (if(RPCUtils.isReceiverNotExists(errorExecuteResponse.t)) {
+      //如果是receiver不存在的异常,进行重试,并且将原来的specialMap中加入排除这个engine的instance
       getExecutor match {
         case e: EntranceEngine =>
           val instance = e.getModuleInstance.getInstance
