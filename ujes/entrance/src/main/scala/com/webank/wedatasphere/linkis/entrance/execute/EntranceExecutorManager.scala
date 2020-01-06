@@ -28,6 +28,7 @@ import scala.concurrent.duration.Duration
 /**
   * Created by enjoyyin on 2018/9/10.
   */
+//entrance的重点模块主要都集中在这个类中了
 abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends ExecutorManager with Logging {
   //目前这里没有注入任何值
   @volatile private var executorListener: Option[ExecutorListener] = None
