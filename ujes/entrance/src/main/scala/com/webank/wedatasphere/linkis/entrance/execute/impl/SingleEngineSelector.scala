@@ -56,6 +56,7 @@ class SingleEngineSelector extends EngineSelector with Logging {
         //释放有2种，一种是这里超时释放，因为engine种lock也没释放，所以要发送rpc请求过去，再将lock对象清空
         //另外一种就算返回结果后直接在entrance将lock变为None，Engine那边应该是自己处理的
         Utils.tryCatch(engine.releaseLock{ sender =>
+          //send异步方法,不关心到底有没unlock成功的,也不使用返回值
           sender.send(RequestEngineUnlock(engine.getModuleInstance.getInstance, lock))
           //engineToLockAndCreateTimes中移除对象
           onEngineLockUsed(engine)

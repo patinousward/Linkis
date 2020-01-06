@@ -201,6 +201,7 @@ class EngineReceiver extends Receiver with JobListener with ProgressListener wit
         }
         ResponseTaskExecute(job.getId)
       case RequestEngineLock(instance, timeout) =>
+        //lock engine,有就返回锁,没锁到就返回engine状态,有可能还是busy的吧
         engineServer.getEngineContext.getOrCreateLockManager.tryLock(timeout + 1000).map{ lock =>
           info(s"locked a lock $lock for instance $instance.")
           ResponseEngineLock(lock)

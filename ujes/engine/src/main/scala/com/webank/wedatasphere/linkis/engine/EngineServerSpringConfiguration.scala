@@ -62,6 +62,8 @@ class EngineServerSpringConfiguration extends Logging {
 
   @Bean(Array("lockManager"))
   @ConditionalOnMissingBean
+  //看配置进行使用
+  //ENGINE_SUPPORT_PARALLELISM 默认是false,io-engine的是true
   def createLockManager(@EngineSchedulerContextBeanAnnotation.EngineSchedulerContextAutowiredAnnotation schedulerContext: SchedulerContext): LockManager =
     if(ENGINE_SUPPORT_PARALLELISM.getValue) new EngineConcurrentLockManager(schedulerContext)
     else new EngineTimedLockManager(schedulerContext)
