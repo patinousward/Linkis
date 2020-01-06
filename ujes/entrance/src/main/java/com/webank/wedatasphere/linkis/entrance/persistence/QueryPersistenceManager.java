@@ -84,6 +84,7 @@ public class QueryPersistenceManager extends PersistenceManager{
             path = createResultSetEngine().persistResultSet(job, response);
         } catch (Throwable e) {
             job.onFailure("persist resultSet failed!", e);
+            //抛异常+1  incrementResultSetPersisted
             if(isEntranceJob) ((EntranceJob)job).incrementResultSetPersisted();
             return;
         }
@@ -98,6 +99,7 @@ public class QueryPersistenceManager extends PersistenceManager{
                 } catch (Throwable e1){
                     logger.error("job {} onLogUpdate error, reason:", job.getId(), e1);
                 } //ignore it
+                //抛异常+1  incrementResultSetPersisted
                 if(isEntranceJob) ((EntranceJob)job).incrementResultSetPersisted();
                 return;
             }
@@ -105,6 +107,7 @@ public class QueryPersistenceManager extends PersistenceManager{
                 RequestPersistTask requestPersistTask = (RequestPersistTask) task;
                 if(StringUtils.isEmpty(requestPersistTask.getResultLocation())) synchronized (task) {
                     if(StringUtils.isNotEmpty(requestPersistTask.getResultLocation())) {
+                        //正常情况写完 + 1
                         if(isEntranceJob) ((EntranceJob)job).incrementResultSetPersisted();
                         return;
                     }
@@ -117,6 +120,7 @@ public class QueryPersistenceManager extends PersistenceManager{
                 }
             }
         }
+        //剩余情况
         if(isEntranceJob) ((EntranceJob)job).incrementResultSetPersisted();
     }
 

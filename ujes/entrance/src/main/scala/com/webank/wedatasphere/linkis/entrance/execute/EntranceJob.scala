@@ -65,21 +65,24 @@ abstract class EntranceJob extends LockJob {
   def getProgressInfo:Array[JobProgressInfo] = this.progressInfo
 
   def setResultSize(resultSize: Int): Unit = {
-    this.resultSize = resultSize
+    this.resultSize = resultSize//结果集文件的个数
     persistedResultSets synchronized persistedResultSets.notify()
   }
   def incrementResultSetPersisted(): Unit = {
-    persistedResultSets.incrementAndGet()
+    persistedResultSets.incrementAndGet() //每次写完结果集文件,都会+1
     persistedResultSets synchronized persistedResultSets.notify()
   }
 
   protected def isWaitForPersistedTimeout(startWaitForPersistedTime: Long): Boolean =
     System.currentTimeMillis - startWaitForPersistedTime >= EntranceConfiguration.JOB_MAX_PERSIST_WAIT_TIME.getValue.toLong
 
+
   override def afterStateChanged(fromState: SchedulerEventState, toState: SchedulerEventState): Unit = {
     if(SchedulerEventState.isCompleted(toState) && (resultSize < 0 || persistedResultSets.get() < resultSize)) {
       val startWaitForPersistedTime = System.currentTimeMillis
       persistedResultSets synchronized {
+        //resultSize<0 或则persistedResultSets.get() < resultSize 都会进行wait 3s,尽管每次写完结果集都notify,但是拉醒用的是while
+        //会进行再判断一次
         while((resultSize < 0 || persistedResultSets.get() < resultSize) && getErrorResponse == null && !isWaitForPersistedTimeout(startWaitForPersistedTime))
           persistedResultSets.wait(3000)
       }
