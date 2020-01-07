@@ -94,6 +94,7 @@ class EngineReceiver extends Receiver with JobListener with ProgressListener wit
     engineExecutorManager.setResultSetListener(this)
     engine = Utils.tryCatch {
       engineExecutorManager.askExecutor(null).foreach { case executor: EngineExecutor =>
+        //getActualUsedResources 只有这里被调用，说明上报实际使用的资源只有一次，向ResourceManger上报实际使用的资源
         resultResource.foreach(resourceManagerClient.resourceInited(_, executor.getActualUsedResources))
         sender.send(ResponseEngineStatusCallback(port, executor.state.id, null))
       }
