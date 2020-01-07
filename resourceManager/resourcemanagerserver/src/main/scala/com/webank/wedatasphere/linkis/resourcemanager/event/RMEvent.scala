@@ -36,7 +36,7 @@ trait Tokenized {
 trait Scoped {
   val eventScope: EventScope
 }
-
+//事件scope,资源事件的等级,instance 代表EM 的,service代表...
 object EventScope extends Enumeration {
   type EventScope = Value
   val Instance, Service, User, Other = Value

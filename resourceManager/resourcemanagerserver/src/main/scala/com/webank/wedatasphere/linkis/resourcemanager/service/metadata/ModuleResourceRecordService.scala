@@ -84,23 +84,26 @@ class ModuleResourceRecordService extends Logging {
   }
 
   def putModuleRegisterRecord(moduleInfo: ModuleInfo): Unit = synchronized {
+    //从linkis_em_resource_meta_data  根据engineManger的applicationName和instance信息(ip端口)获取existing
+    //linkis_em_resource_meta_data  这个表接受多个比如sparkEngineManger的注册
     val existing = getByEmInstance(moduleInfo.moduleInstance.getApplicationName, moduleInfo.moduleInstance.getInstance)
     if (existing != null)
+      //已经存在抛出异常
       throw new RMErrorException(110005, s"Module instance(模块实例): ${moduleInfo.moduleInstance} Already registered, if you need to re-register, please log out and then register(已经注册，如果需要重新注册请注销后再进行注册)")
     ModuleResourceRecord(moduleInfo, Resource.initResource(moduleInfo.resourceRequestPolicy),
       moduleInfo.totalResource, Resource.initResource(moduleInfo.resourceRequestPolicy))
     val newRecord = new EmResourceMetaData(
       moduleInfo.moduleInstance.getApplicationName,
       moduleInfo.moduleInstance.getInstance,
-      serialize(moduleInfo.totalResource),
-      serialize(moduleInfo.protectedResource),
-      moduleInfo.resourceRequestPolicy.toString,
-      serialize(Resource.initResource(moduleInfo.resourceRequestPolicy)),
-      serialize(moduleInfo.totalResource),
-      serialize(Resource.initResource(moduleInfo.resourceRequestPolicy)),
-      System.currentTimeMillis()
+      serialize(moduleInfo.totalResource),//总资源
+      serialize(moduleInfo.protectedResource),//保护资源
+      moduleInfo.resourceRequestPolicy.toString,//资源策略
+      serialize(Resource.initResource(moduleInfo.resourceRequestPolicy)),//已经使用资源,刚注册当然全是0
+      serialize(moduleInfo.totalResource),//剩余资源,刚注册就是总资源
+      serialize(Resource.initResource(moduleInfo.resourceRequestPolicy)),//锁定资源,刚注册当然是0
+      System.currentTimeMillis()//注册时间
     )
-    insert(newRecord)
+    insert(newRecord) //linkis_em_resource_meta_data 表中插入记录
     info(s"Succeed to  register module ${moduleInfo.moduleInstance}")
   }
 
@@ -136,6 +139,7 @@ class ModuleResourceRecordService extends Logging {
     val existing = getByEmInstance(moduleInstance.getApplicationName, moduleInstance.getInstance)
     if (existing == null)
       throw new RMErrorException(110005, s"Module instance(模块实例): $moduleInstance Not registered in the resource manager(并没有在资源管理器进行注册)")
+    //增加剩余资源,去除 锁定的资源
     existing.setLeftResource(serialize(deserialize(existing.getLeftResource) + resource))
     existing.setLockedResource(serialize(deserialize(existing.getLockedResource) - resource))
     update(existing)

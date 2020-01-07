@@ -40,6 +40,7 @@ trait AbstractEngineResourceFactory extends EngineResourceFactory {
     }
     engineResource.setCreator(request.creator)
     engineResource.setUser(user)
+    //getRequestResource调用的是sparkEM,hive等重写的上报的资源
     engineResource.setResource(getRequestResource(request.properties))
     engineResource
   }

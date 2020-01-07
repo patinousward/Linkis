@@ -30,6 +30,11 @@ class SparkEngineResourceFactory extends AbstractEngineResourceFactory {
 
   override protected def getRequestResource(properties: java.util.Map[String, String]): DriverAndYarnResource = {
     val executorNum = DWC_SPARK_EXECUTOR_INSTANCES.getValue(properties)
+    //小结:
+    //spark是DriverAndYarnResource 类型的资源,其中看出DriverAndYarnResource由LoadInstanceResource和YarnResource2部分组成
+    //LoadInstanceResource  是包含内存,cores,isntance的资源
+    //而LoadInstance只包含内存,cores
+    //YarnResource  包含执行器内存,执行器核心数,队列实例(默认0),队列名
     new DriverAndYarnResource(
       new LoadInstanceResource(ByteTimeUtils.byteStringAsBytes(DWC_SPARK_DRIVER_MEMORY.getValue(properties) + "G"),
         DWC_SPARK_DRIVER_CORES,

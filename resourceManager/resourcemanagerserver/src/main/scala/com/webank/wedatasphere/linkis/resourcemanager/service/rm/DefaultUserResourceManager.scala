@@ -183,17 +183,20 @@ class DefaultUserResourceManager extends UserResourceManager with Logging {
     //RMListenerBus.getRMListenerBusInstance.post(new UserSessionStartEvent(event.user,userResourceRecord.getCreator, usedResource))
     info("Thread " + Thread.currentThread() + "finished dealUserUsedEvent")
   }
-
+  //对username 进行加锁  (好像没啥必要?)
   def dealUserReleasedEvent(event: UserReleasedEvent): Unit = RMUtils.buildLock(event.user) synchronized {
     info(s"${event.user} from module：${event.userReleasedResource.moduleInstance} released resource：${event.userReleasedResource}")
     val releasedResource = event.userReleasedResource
     //RMListenerBus.getRMListenerBusInstance.post(new UserSessionEndEvent(event.user, releasedResource))
     val userResourceRecord = userResourceRecordService.getUserModuleRecord(event.user, releasedResource.ticketId)
+    //如果这个engine 的已经使用资源为空,锁定资源不为空
     if (null == userResourceRecord.getUserUsedResource && userResourceRecord.getUserLockedResource != null) {
+      //releasedResource.moduleInstance是EngineManger的ip和端口
       moduleResourceRecordService.moduleClearLockedResource(releasedResource.moduleInstance, userResourceRecordService.deserialize(userResourceRecord.getUserLockedResource))
     } else {
       moduleResourceRecordService.moduleReleasedUserResource(releasedResource.moduleInstance, userResourceRecordService.deserialize(userResourceRecord.getUserUsedResource))
     }
+    //移除linkis_user_resource_meta_data 中的记录
     userResourceRecordService.removeUserTicketId(releasedResource.ticketId, userResourceRecord)
 
     //    val moduleInstanceRecord = moduleInstanceMap.getOrElse(event.moduleName, ModuleInstanceRecord(event.moduleName, 0, 0))

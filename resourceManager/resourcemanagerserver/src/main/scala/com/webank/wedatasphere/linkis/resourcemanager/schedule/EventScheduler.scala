@@ -30,6 +30,8 @@ abstract class EventScheduler(val schedulerContext: SchedulerContext) extends Ab
 
 }
 
+//这个类和EventScheduler  都是AbstractScheduler的子类,和ParallelScheduler,FIFOSchedulery的实现方式几乎一样,只是getName方法不一样而已
+//最主要的作用都是从schedulerContext中给groupFactory 和consumerManager进行赋值
 class EventSchedulerImpl(schedulerContext: SchedulerContext) extends EventScheduler(schedulerContext) {
   private var consumerManager: EventConsumerManager = _
   private var groupFactory: EventGroupFactory = _

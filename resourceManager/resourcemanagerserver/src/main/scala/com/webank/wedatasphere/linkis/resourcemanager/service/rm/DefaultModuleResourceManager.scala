@@ -128,7 +128,10 @@ class DefaultModuleResourceManager extends ModuleResourceManager with Logging {
     //RMListenerBus.getRMListenerBusInstance.post(event)
     info(s"Start processing  registration event of module：${event.moduleInfo}")
     val moduleInfo = event.moduleInfo
+    //linkis_em_meta_data 表,EngineManager的applicationName为key,policy为value,不存在就插入记录,存在就update
+    //虽然做了synchronized,但是如果有2个RM 服务,并且是并发请求的,就会有问题
     moduleResourceRecordService.putModulePolicy(moduleInfo.moduleInstance.getApplicationName, moduleInfo.resourceRequestPolicy)
+    //linkis_em_resource_meta_data表中插入记录
     moduleResourceRecordService.putModuleRegisterRecord(moduleInfo)
     info(s"End processing registration events ${event.moduleInfo.moduleInstance} success")
   }
@@ -141,9 +144,14 @@ class DefaultModuleResourceManager extends ModuleResourceManager with Logging {
     //RMListenerBus.getRMListenerBusInstance.post(event)
     info(s"Start processing  logout event of module：${event.moduleInstance}")
     val moduleInstance = event.moduleInstance
+    //删除linkis_user_resource_meta_data 表中 em_application_name 和engineMangerinsrance信息和unregis相同的所有记录
+    //这个表主要存放user-引擎和enginemanagre的关系表,每个引擎都会在这里留下记录
     Utils.tryQuietly(userResourceRecordService.clearModuleResourceRecord(moduleInstance))
+    //查看下linkis_rm_resource_meta_data 表中是否有数据,没有抛出异常
     val record = moduleResourceRecordService.getModuleResourceRecord(moduleInstance)
+    //这里的null判断多余了,上面的方法返回的时候就已经判断了
     if (record == null) throw new RMErrorException(110005, s"Failed to process logout event of module : $moduleInstance Not registered")
+    //根据id删除这条记录
     moduleResourceRecordService.delete(record.getId)
     info(s"End processing  logout event of module：${event.moduleInstance} success")
   }

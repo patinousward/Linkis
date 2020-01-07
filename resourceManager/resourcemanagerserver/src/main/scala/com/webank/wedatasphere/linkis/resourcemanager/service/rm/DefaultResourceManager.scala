@@ -41,7 +41,7 @@ import org.springframework.stereotype.Component
 @Component
 class DefaultResourceManager extends ResourceManager with Logging with InitializingBean {
 
-  override protected val rmContext: RMContext = RMContext.getOrCreateRMContext()
+  override protected val rmContext: RMContext = RMContext.getOrCreateRMContext() //DefaultRMContext对象
 
   @Autowired
   var userResourceRecordService: UserResourceRecordService = _
@@ -118,8 +118,10 @@ class DefaultResourceManager extends ResourceManager with Logging with Initializ
     */
   override def register(moduleInfo: ModuleInfo): Unit = {
     info(s"Get a module registration request: $moduleInfo")
+    //如果注册的资源(总资源和保护资源)<0 则抛出异常
     if (moduleInfo.totalResource < Resource.getZeroResource(moduleInfo.totalResource) || moduleInfo.protectedResource < Resource.getZeroResource(moduleInfo.protectedResource))
       throw new RMErrorException(11002, s"Failed to register module : $ModuleInfo,Resources cannot be negative")
+    //保护资源>总资源  也抛出异常
     if (moduleInfo.protectedResource > moduleInfo.totalResource)
       throw new RMErrorException(11002, s"Failed to register module : $ModuleInfo,protectedResource must be less than totalResource")
     moduleResourceManager.dealModuleRegisterEvent(new ModuleRegisterEvent(EventScope.Instance, moduleInfo))
@@ -324,9 +326,12 @@ class DefaultResourceManager extends ResourceManager with Logging with Initializ
     * @param resultResource
     */
   override def resourceReleased(resultResource: ResultResource, moduleInstance: ServiceInstance): Unit = {
+    //强转下
     val userResultResource = resultResource.asInstanceOf[UserResultResource]
+    //获取user
     val user = userResultResource.user
     //1.Determine if there are any more events(判断是否还有事件)
+    //hasModuleInstanceEvent 和  hasUserEvent  均 是返回false的,这些方法是zk版本遗留的,实际没有被调用
     if (hasModuleInstanceEvent(moduleInstance)) {
       throw new RMWarnException(111004, s"There are still unconsumed event of module: $moduleInstance")
     }
@@ -337,12 +342,16 @@ class DefaultResourceManager extends ResourceManager with Logging with Initializ
 
     //2.Lock engine, lock user(锁引擎，锁用户)
     Utils.tryFinally {
+      //分布式锁,确保资源 减少成功,否则在减少的过程中,另外一个rm也对资源进行加减
+      //linkis_resource_lock表
+      //user=null的时候相当于锁了引擎
       resourceLockService.tryLock(null, moduleInstance.getApplicationName, moduleInstance.getInstance)
       resourceLockService.tryLock(user, moduleInstance.getApplicationName, moduleInstance.getInstance)
       //3.Broadcast resource use(广播资源使用)
       val tickedId = userResultResource.ticketId
       val userReleasedResource = UserReleasedResource(tickedId, moduleInstance)
       val userReleasedEvent = new UserReleasedEvent(EventScope.User, user, userReleasedResource)
+      //数据库中进行资源的加减操作
       userResourceManager.dealUserReleasedEvent(userReleasedEvent)
     } {
       //4.Release lock(释放锁)

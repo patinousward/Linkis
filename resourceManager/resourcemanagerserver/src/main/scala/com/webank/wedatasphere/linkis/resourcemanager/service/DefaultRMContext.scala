@@ -31,13 +31,15 @@ import com.webank.wedatasphere.linkis.scheduler.Scheduler
   * Created by shanhuang on 9/11/18.
   */
 class DefaultRMContext extends RMContext with Logging {
-
+  //反射创建这里类,但是这些类已经有@Component了??  而且这两个对象只有在notifyRMEventListenerBus注册的时候用上了
+  //com.webank.wedatasphere.linkis.resourcemanager.service.rm.DefaultModuleResourceManager
   private val moduleResourceManager = RMUtils.getClassInstance[ModuleResourceManager](RMConfiguration.MODULE_RM_CLAZZ.getValue)
-
+  //com.webank.wedatasphere.linkis.resourcemanager.service.rm.DefaultUserResourceManager
   private val userResourceManager = RMUtils.getClassInstance[UserResourceManager](RMConfiguration.USER_RM_CLAZZ.getValue)
-
+  //com.webank.wedatasphere.linkis.resourcemanager.event.notify.NotifyRMEventListenerBus
   private val notifyRMEventListenerBus = RMUtils.getClassInstance[NotifyRMEventListenerBus](RMConfiguration.EVENT_LISTENER_BUS_CLAZZ.getValue)
 
+  //生成EventSchedulerImpl单例,这个类中貌似只有这个属性和下面的getScheduler 方法是有用的,其他没用,应该是使用zk的遗留代码
   private val scheduler = new EventSchedulerImpl(new EventSchedulerContextImpl(1000))
 
   private val resourceLockService = new ResourceLockService
@@ -51,16 +53,16 @@ class DefaultRMContext extends RMContext with Logging {
   //    new DriverAndYarnReqResourceService(userResourceManager, moduleResourceManager))
 
   //初始化：
-  init()
+  init() //没用的方法,notifyRMEventListenerBus 没有start
 
   def init(): Unit = {
     notifyRMEventListenerBus.addListener(moduleResourceManager)
     notifyRMEventListenerBus.addListener(userResourceManager)
     //add rm listener
     //RMListenerBus.init()
-    scheduler.init()
+    scheduler.init()   //这个方法还是有用的,主要是
     scheduler.getSchedulerContext.getOrCreateExecutorManager.asInstanceOf[RMEventExecutorManager].setNotifyRMEventListenerBus(notifyRMEventListenerBus)
-    shutdown()
+    shutdown()//这里应该叫addShuntdownHook
   }
 
   def shutdown(): Unit = {

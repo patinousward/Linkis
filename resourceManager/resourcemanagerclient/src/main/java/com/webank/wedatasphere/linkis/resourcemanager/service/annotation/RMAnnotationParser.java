@@ -76,7 +76,15 @@ public class RMAnnotationParser extends JavaLog {
             System.exit(12000);
         }
         info("Start registering resources with RM(开始向RM注册资源)：" + moduleInfoObj);
+        //EM 启动的时候上报的资源ModuleInfo
         resourceManagerClient.register((ModuleInfo) moduleInfoObj);
     }
+
+    /*ModuleInfo(moduleInstance: ServiceInstance, em的instance
+               totalResource: Resource,总的资源
+               protectedResource: Resource, //当资源剩下多少时，进入保护模式
+               resourceRequestPolicy: ResourceRequestPolicy) //资源策略
+
+               */
 
 }
