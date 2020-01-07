@@ -29,6 +29,7 @@ class ResourceRequesterImpl(rmClient: ResourceManagerClient) extends ResourceReq
     case time: UserTimeoutEngineResource =>
       //Only allow up to 30 seconds to request resources(只允许使用最多30秒的时间，用于请求资源)
       val timeout = math.max(5000, math.min(time.getTimeout / 5, 30000))  //TODO Whether it takes 30 seconds to make parameters(30秒是否需要做成参数)
+      //引擎申请资源的方法
       rmClient.requestResource(time.getUser, time.getCreator, resourceRequest.getResource, timeout)
     case user: UserEngineResource =>
       rmClient.requestResource(user.getUser, user.getCreator, resourceRequest.getResource)

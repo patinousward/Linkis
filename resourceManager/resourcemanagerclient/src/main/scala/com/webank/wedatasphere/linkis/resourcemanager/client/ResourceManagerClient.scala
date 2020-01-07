@@ -43,7 +43,7 @@ class ResourceManagerClient(private var moduleInstance: ServiceInstance) extends
     info("ResourceManagerClient init")
     if (moduleInstance == null) moduleInstance = Sender.getThisServiceInstance
   }
-
+  //注册服务器资源的地方
   def register(moduleInfo: ModuleInfo): Unit = sender.send(moduleInfo)
 
   def register(totalResource: Resource, protectedResource: Resource, resourceRequestPolicy: ResourceRequestPolicy): Unit =
@@ -52,7 +52,7 @@ class ResourceManagerClient(private var moduleInstance: ServiceInstance) extends
   def unregister(): Unit = sender.send(moduleInstance)
 
   def requestResource(user: String, creator: String, resource: Resource): ResultResource = sender.ask(RequestResource(moduleInstance, user, creator, resource)).asInstanceOf[ResultResource]
-
+  //engineManger请求的引擎初始化资源/引擎启动资源
   def requestResource(user: String, creator: String, resource: Resource, wait: Long) = sender.ask(RequestResourceAndWait(moduleInstance, user, creator, resource, wait)).asInstanceOf[ResultResource]
   //engine上报实际使用的资源
   def resourceInited(resource: ResultResource, realUsed: Resource): Unit = {
