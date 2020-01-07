@@ -77,7 +77,7 @@ class UserResourceRecordService extends Logging {
     }
   }
 
-
+  //根据ticketId和user获取linkis_user_resource_meta_data 中的记录,只有1条,ticketid几乎是唯一的了
   def getUserModuleRecord(user: String, ticketId: String): UserResourceMetaData = {
     val existing = userResourceMetaDataDao.getByTicketId(ticketId)
     if (existing == null) throw new RMErrorException(110004, s"user：${user} ResourceRecords  ticketId:$ticketId lose，please Re-request")

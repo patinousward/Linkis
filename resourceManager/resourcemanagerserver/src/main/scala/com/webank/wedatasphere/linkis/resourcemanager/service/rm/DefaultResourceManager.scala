@@ -351,6 +351,7 @@ class DefaultResourceManager extends ResourceManager with Logging with Initializ
       val tickedId = userResultResource.ticketId
       val userReleasedResource = UserReleasedResource(tickedId, moduleInstance)
       val userReleasedEvent = new UserReleasedEvent(EventScope.User, user, userReleasedResource)
+      //数据库中进行资源的加减操作
       userResourceManager.dealUserReleasedEvent(userReleasedEvent)
     } {
       //4.Release lock(释放锁)

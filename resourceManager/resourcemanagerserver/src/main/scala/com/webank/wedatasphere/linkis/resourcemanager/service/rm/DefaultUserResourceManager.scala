@@ -189,11 +189,14 @@ class DefaultUserResourceManager extends UserResourceManager with Logging {
     val releasedResource = event.userReleasedResource
     //RMListenerBus.getRMListenerBusInstance.post(new UserSessionEndEvent(event.user, releasedResource))
     val userResourceRecord = userResourceRecordService.getUserModuleRecord(event.user, releasedResource.ticketId)
+    //如果这个engine 的已经使用资源为空,锁定资源不为空
     if (null == userResourceRecord.getUserUsedResource && userResourceRecord.getUserLockedResource != null) {
+      //releasedResource.moduleInstance是EngineManger的ip和端口
       moduleResourceRecordService.moduleClearLockedResource(releasedResource.moduleInstance, userResourceRecordService.deserialize(userResourceRecord.getUserLockedResource))
     } else {
       moduleResourceRecordService.moduleReleasedUserResource(releasedResource.moduleInstance, userResourceRecordService.deserialize(userResourceRecord.getUserUsedResource))
     }
+    //移除linkis_user_resource_meta_data 中的记录
     userResourceRecordService.removeUserTicketId(releasedResource.ticketId, userResourceRecord)
 
     //    val moduleInstanceRecord = moduleInstanceMap.getOrElse(event.moduleName, ModuleInstanceRecord(event.moduleName, 0, 0))
