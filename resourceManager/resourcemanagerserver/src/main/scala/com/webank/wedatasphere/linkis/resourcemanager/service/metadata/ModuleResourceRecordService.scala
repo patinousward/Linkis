@@ -120,7 +120,9 @@ class ModuleResourceRecordService extends Logging {
     val existing = getByEmInstance(moduleInstance.getApplicationName, moduleInstance.getInstance)
     if (existing == null)
       throw new RMErrorException(110005, s"Module instance(模块实例): $moduleInstance Not registered in the resource manager(并没有在资源管理器进行注册)")
+    //模块使用资源增加
     existing.setUsedResource(serialize(deserialize(existing.getUsedResource) + usedResource))
+    //锁定资源减少，所以把锁定资源加到剩余资源上面了
     existing.setLeftResource(serialize(deserialize(existing.getLeftResource) + lockedResource - usedResource))
     existing.setLockedResource(serialize(deserialize(existing.getLockedResource) - lockedResource))
     update(existing)

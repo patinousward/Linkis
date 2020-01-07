@@ -77,6 +77,7 @@ class EngineReceiver extends Receiver with JobListener with ProgressListener wit
     val pid = ManagementFactory.getRuntimeMXBean.getName.split("@")(0)
     info(s"Starting engineServer($pid)...")
     val port = Sender.getThisInstance.split(":")(1).toInt
+    //engine启动的时候会带上ticketId 标记申请的资源，这里封装为UserResultResource（ticketid，username）
     val resultResource = DWCArgumentsParser.getDWCOptionMap.get("ticketId").map(UserResultResource(_, userWithCreator.user))
     if(StringUtils.isEmpty(engineCallback.applicationName) || StringUtils.isEmpty(engineCallback.instance))
       throw new EngineErrorException(40015, "Cannot find the instance information of engineManager, can not complete the callback.(找不到engineManager的instance信息，不能完成callback.)")

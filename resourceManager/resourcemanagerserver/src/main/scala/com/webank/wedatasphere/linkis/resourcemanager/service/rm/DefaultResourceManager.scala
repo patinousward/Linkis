@@ -307,8 +307,10 @@ class DefaultResourceManager extends ResourceManager with Logging with Initializ
       resourceLockService.tryLock(user, moduleInstance.getApplicationName, moduleInstance.getInstance)
       //3.Broadcast resource use(广播资源使用)
       val tickedId = userResultResource.ticketId
+      //封装一个UserUsedResource对象
       val usedResource: UserUsedResource = UserUsedResource(tickedId, moduleInstance, realUsed, engineInstance)
       val userUsedEvent = new UserUsedEvent(EventScope.User, user, usedResource)
+      //处理已经使用资源的主方法
       userResourceManager.dealUserUsedEvent(userUsedEvent)
       //notifyEngine.notifyToAll(new WaitReleasedEvent(new ClearUsedEvent(EventScope.User, user, usedResource), RMConfiguration.RM_WAIT_EVENT_TIME_OUT.getValue))
     } {

@@ -41,7 +41,8 @@ class RMReceiver extends Receiver with Logging {
     case ModuleInfo(moduleInstance, totalResource, protectedResource, resourceRequestPolicy) => rm.register(ModuleInfo(moduleInstance, totalResource, protectedResource, resourceRequestPolicy))
       //engine manager
     case moduleInstance: ServiceInstance => rm.unregister(moduleInstance)
-      //引擎上报实际使用的资源
+      //引擎上报实际使用的资源  resource：UserResultResource，realUsed上报的资源
+      //instance信息从sender中获取，不需要发送方请求
     case ResourceInited(resource, moduleInstance, realUsed, engineInstance) => rm.resourceInited(resource, moduleInstance, realUsed, SenderUtils.getSenderServiceInstance(sender))
       //engine被kill释放资源    resultResource:UserResultResource(ticketid,username)
     case ResourceReleased(resultResource, moduleInstance) => rm.resourceReleased(resultResource, moduleInstance)

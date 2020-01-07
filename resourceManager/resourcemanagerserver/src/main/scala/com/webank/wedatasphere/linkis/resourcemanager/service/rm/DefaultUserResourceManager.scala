@@ -167,15 +167,19 @@ class DefaultUserResourceManager extends UserResourceManager with Logging {
     info(s"${event.user} committed module：${event.userUsedResource.moduleInstance} usedResource：${event.userUsedResource}")
 
     val usedResource = event.userUsedResource
+    //根据当前用户和ticketid，获取当前engine资源的记录linkis_user_resource_meta_data
     val userResourceRecord = userResourceRecordService.getUserModuleRecord(event.user, usedResource.ticketId)
-
+    //update module资源  linkis_em_resource_meta_data module的锁定资源
     moduleResourceRecordService.moduleUsedUserResource(usedResource.moduleInstance, usedResource.resource, userResourceRecordService.deserialize(userResourceRecord.getUserLockedResource))
     userResourceRecord.setEngineApplicationName(usedResource.engineInstance.getApplicationName)
     userResourceRecord.setEngineInstance(usedResource.engineInstance.getInstance)
-    userResourceRecord.setUserLockedResource(null)
+    userResourceRecord.setUserLockedResource(null)//锁定资源设置为null
     userResourceRecord.setUserUsedResource(userResourceRecordService.serialize(usedResource.resource))
     userResourceRecord.setUsedTime(System.currentTimeMillis())
+    //更新linkis_user_resource_meta_data 表，主要是使用资源增加
     userResourceRecordService.update(userResourceRecord)
+    //可以看出，申请资源的时候，会先在linkis_user_resource_meta_data中插入记录，但是使用资源是空的，只有locktime
+    //并且，在模块资源中，将申请引擎所需要的资源归为锁定资源在总资源中进行减少，等待初始化再解锁
 
     //    val moduleInstanceRecord = moduleInstanceMap.getOrElse(event.moduleName, ModuleInstanceRecord(event.moduleName, 0, 0))
     //    moduleInstanceMap(event.moduleName) = ModuleInstanceRecord(moduleInstanceRecord.moduleName, moduleInstanceRecord.start + 1, moduleInstanceRecord.locked - 1)

@@ -59,7 +59,7 @@ class ResourceManagerClient(private var moduleInstance: ServiceInstance) extends
   //engineManger请求的引擎初始化资源/引擎启动资源
   def requestResource(user: String, creator: String, resource: Resource, wait: Long) = sender.ask(RequestResourceAndWait(moduleInstance, user, creator, resource, wait)).asInstanceOf[ResultResource]
 
-  //engine上报实际使用的资源
+  //engine上报实际使用的资源   resource：UserResultResource，realUsed上报的资源
   def resourceInited(resource: ResultResource, realUsed: Resource): Unit = {
     info("ResourceManagerClient init")
     sender.send(ResourceInited(resource, moduleInstance, realUsed))
