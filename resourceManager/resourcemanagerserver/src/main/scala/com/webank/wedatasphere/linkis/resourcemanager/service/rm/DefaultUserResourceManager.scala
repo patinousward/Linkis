@@ -183,7 +183,7 @@ class DefaultUserResourceManager extends UserResourceManager with Logging {
     //RMListenerBus.getRMListenerBusInstance.post(new UserSessionStartEvent(event.user,userResourceRecord.getCreator, usedResource))
     info("Thread " + Thread.currentThread() + "finished dealUserUsedEvent")
   }
-
+  //对username 进行加锁  (好像没啥必要?)
   def dealUserReleasedEvent(event: UserReleasedEvent): Unit = RMUtils.buildLock(event.user) synchronized {
     info(s"${event.user} from module：${event.userReleasedResource.moduleInstance} released resource：${event.userReleasedResource}")
     val releasedResource = event.userReleasedResource

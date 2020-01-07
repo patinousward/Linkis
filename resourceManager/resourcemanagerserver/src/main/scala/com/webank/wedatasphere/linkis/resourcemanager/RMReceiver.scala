@@ -37,15 +37,20 @@ class RMReceiver extends Receiver with Logging {
   var rm: ResourceManager = _
 
   override def receive(message: Any, sender: Sender): Unit = message match {
+      //em 注册
     case ModuleInfo(moduleInstance, totalResource, protectedResource, resourceRequestPolicy) => rm.register(ModuleInfo(moduleInstance, totalResource, protectedResource, resourceRequestPolicy))
+      //engine manager
     case moduleInstance: ServiceInstance => rm.unregister(moduleInstance)
+      //引擎上报实际使用的资源
     case ResourceInited(resource, moduleInstance, realUsed, engineInstance) => rm.resourceInited(resource, moduleInstance, realUsed, SenderUtils.getSenderServiceInstance(sender))
+      //engine被kill释放资源    resultResource:UserResultResource(ticketid,username)
     case ResourceReleased(resultResource, moduleInstance) => rm.resourceReleased(resultResource, moduleInstance)
   }
 
   override def receiveAndReply(message: Any, sender: Sender): Any = message match {
     case RequestResource(moduleInstance, user, creator, resource) =>
       rm.requestResource(moduleInstance, user, creator, resource)
+      //启动引擎申请资源
     case RequestResourceAndWait(moduleInstance, user, creator, resource, waitTime) =>
       rm.requestResource(moduleInstance, user, creator, resource, waitTime)
     case moduleInstance: ServiceInstance => ResourceInfo(rm.getModuleResourceInfo(moduleInstance))

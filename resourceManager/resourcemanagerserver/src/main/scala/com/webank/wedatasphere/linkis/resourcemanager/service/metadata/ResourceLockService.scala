@@ -40,8 +40,10 @@ class ResourceLockService extends Logging {
   def tryLock(user: String, emApplicationName: String, emInstance: String, timeout: Long): Boolean = {
     var realUser = ""
     if (user != null) realUser = user
+    //如果传的参数为null,则realUser为""
     val startTime = System.currentTimeMillis
     val resourceLock = new ResourceLock(realUser, emApplicationName, emInstance)
+    //反复调用tryInsert方法插入linkis_resouce_lock 表
     while (!tryInsert(resourceLock) && System.currentTimeMillis - startTime < timeout) Thread.sleep(5)
     System.currentTimeMillis - startTime < timeout
   }
@@ -61,13 +63,13 @@ class ResourceLockService extends Logging {
   //    }
   //    true
   //  }
-
+  //唯一主键   user,em_application_name ,em_instance
   private def tryInsert(resourceLock: ResourceLock) = try {
     resourceLockDao.insert(resourceLock)
     true
   } catch {
     case e: MySQLIntegrityConstraintViolationException => false
-    case d: DuplicateKeyException => false
+    case d: DuplicateKeyException => false  //重复主键
     case de: DeadlockLoserDataAccessException => false
     case da: DataAccessException =>
       error("unexpected DataAccessException: ", da)

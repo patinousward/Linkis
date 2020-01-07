@@ -42,7 +42,7 @@ private[wedatasphere] class RMListenerBus[L <: RMEventListener, E <: RMEvent]
 
 object RMListenerBus extends Logging {
   private val rmListenerBus = new RMListenerBus[RMEventListener, RMEvent]
-
+  //没有 使用的地方,说明RMListenerBus没被启用
   def getRMListenerBusInstance = rmListenerBus
 
   def init(): Unit = {
