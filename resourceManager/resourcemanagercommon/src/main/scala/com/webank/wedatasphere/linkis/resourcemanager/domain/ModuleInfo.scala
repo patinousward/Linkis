@@ -34,10 +34,10 @@ import com.webank.wedatasphere.linkis.common.ServiceInstance
   */
 case class ModuleInfo(moduleInstance: ServiceInstance,
                       totalResource: Resource,
-                      protectedResource: Resource, //Enter the protection mode when the resource reaches(当资源达到多少时，进入保护模式)
-                      resourceRequestPolicy: ResourceRequestPolicy
+                      protectedResource: Resource, //(当资源剩下多少时，进入保护模式)
+                      resourceRequestPolicy: ResourceRequestPolicy//资源策略val Default, Memory, CPU, Load, Instance, LoadInstance, Yarn, DriverAndYarn, Special = Value
                      )
-
+//json4s中自定义ModuleInfo的序列化
 object ModuleInfoSerializer extends CustomSerializer[ModuleInfo](implicit formats => ( {
   case JObject(List(("moduleInstance", moduleInstance), ("totalResource", totalResource), ("protectedResource", protectedResource), ("resourceRequestPolicy", resourceRequestPolicy))) =>
     implicit val formats = DefaultFormats + ResourceSerializer + ModuleInstanceSerializer

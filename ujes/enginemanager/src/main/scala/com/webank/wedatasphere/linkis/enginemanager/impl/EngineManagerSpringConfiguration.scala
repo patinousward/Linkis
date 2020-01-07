@@ -51,6 +51,7 @@ class EngineManagerSpringConfiguration {
   @ConditionalOnMissingBean
   def createEngineResourceFactory(): EngineResourceFactory = new AbstractEngineResourceFactory {
     override protected def getRequestResource(properties: java.util.Map[String, String]): Resource =
+      //EngienManger默认请求的资源是LoadResource 默认2g,1cores
       new LoadResource(ENGINE_CLIENT_MEMORY.getValue(properties).toLong, 1)
   }
 
@@ -63,9 +64,16 @@ class EngineManagerSpringConfiguration {
   @Bean(name = Array("resources"))
   @ConditionalOnMissingBean
   def createResource(): ModuleInfo = {
-    val maxResources = new LoadInstanceResource(ENGINE_MANAGER_MAX_MEMORY_AVAILABLE.getValue.toLong, ENGINE_MANAGER_MAX_CORES_AVAILABLE.getValue,
+    //总资源
+    val maxResources = new LoadInstanceResource(
+      //内存总80g 默认
+      ENGINE_MANAGER_MAX_MEMORY_AVAILABLE.getValue.toLong,
+      //cpu核数 总资源50 默认
+      ENGINE_MANAGER_MAX_CORES_AVAILABLE.getValue,
+      //instance数总数50 默认
       ENGINE_MANAGER_MAX_CREATE_INSTANCES.getValue)
     ModuleInfo(Sender.getThisServiceInstance, maxResources,
+      //保护资源默认4g,2cores,2instance
       new LoadInstanceResource(ENGINE_MANAGER_PROTECTED_MEMORY.getValue.toLong, ENGINE_MANAGER_PROTECTED_CORES.getValue,
         ENGINE_MANAGER_PROTECTED_INSTANCES.getValue), ResourceRequestPolicy.LoadInstance)
   }

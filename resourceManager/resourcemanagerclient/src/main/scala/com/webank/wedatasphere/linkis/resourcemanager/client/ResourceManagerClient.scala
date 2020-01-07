@@ -54,7 +54,7 @@ class ResourceManagerClient(private var moduleInstance: ServiceInstance) extends
   def requestResource(user: String, creator: String, resource: Resource): ResultResource = sender.ask(RequestResource(moduleInstance, user, creator, resource)).asInstanceOf[ResultResource]
 
   def requestResource(user: String, creator: String, resource: Resource, wait: Long) = sender.ask(RequestResourceAndWait(moduleInstance, user, creator, resource, wait)).asInstanceOf[ResultResource]
-
+  //engine上报实际使用的资源
   def resourceInited(resource: ResultResource, realUsed: Resource): Unit = {
     info("ResourceManagerClient init")
     sender.send(ResourceInited(resource, moduleInstance, realUsed))

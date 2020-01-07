@@ -57,6 +57,7 @@ class EngineReceiver extends Receiver with JobListener with ProgressListener wit
   with LogListener with JobLogListener with ResultSetListener with ExecutorListener with Logging {
 
   private val engineCallback = EngineCallback.mapToEngineCallback(DWCArgumentsParser.getDWCOptionMap)
+  //ResourceManagerClient  是发送请求给resourceMangerserver的客户端,可以上报engine的资源
   private val resourceManagerClient = new ResourceManagerClient(ServiceInstance(engineCallback.applicationName, engineCallback.instance))
   private implicit val userWithCreator = UserWithCreator(System.getProperty("user.name"), DWCArgumentsParser.getDWCOptionMap("creator"))
   @Autowired

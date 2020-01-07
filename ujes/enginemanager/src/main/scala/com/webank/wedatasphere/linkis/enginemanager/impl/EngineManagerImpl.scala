@@ -37,8 +37,8 @@ class EngineManagerImpl extends AbstractEngineManager {
   override def getEngineManagerContext: EngineManagerContext = engineManagerContext
 
   /**
-    * Registered resources(注册资源)
+    * Registered resources(注册资源)EngineManagerSpringConfiguration类中进行统一管理bean
     */
   @RegisterResource
-  override def registerResources(): ModuleInfo = resources
+  override def registerResources(): ModuleInfo = resources //这里注册的资源就是服务器资源
 }
