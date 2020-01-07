@@ -44,9 +44,13 @@ class DefaultUserMetaData extends UserMetaData with Logging {
   override def getUserAvailableResource(moduleName: String, user: String, creator: String): (UserAvailableResource, UserAvailableResource) = {
     val policy = moduleResourceRecordService.getModulePolicy(moduleName)
     val appName = ProtocolUtils.getAppName(moduleName).getOrElse(moduleName)
+    //generateResource 应该说是产生 一个max的资源限制，只是在rpc请求configuration 中creator是否为null的问题
+    //user的为NULL
+    //available 资源，再conf中配置，优先使用configuration服务中的参数
     val userModuleAvailableResource = UserAvailableResource(moduleName, generateResource(policy, UserConfiguration.getCacheMap(RequestQueryAppConfigWithGlobal(user, null, appName, true))))
     val userCreatorAvailableResource = UserAvailableResource(moduleName, generateResource(policy, UserConfiguration.getCacheMap(RequestQueryAppConfigWithGlobal(user, creator, appName, true))))
     info(s"$user available resource of module:$userModuleAvailableResource,on creator available resource:$userCreatorAvailableResource")
+    //以元组形式返回
     (userModuleAvailableResource, userCreatorAvailableResource)
   }
 

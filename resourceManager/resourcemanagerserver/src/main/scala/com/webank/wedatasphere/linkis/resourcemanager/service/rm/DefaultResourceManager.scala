@@ -173,6 +173,7 @@ class DefaultResourceManager extends ResourceManager with Logging with Initializ
       return NotEnoughResource(s"There are still unconsumed event of user: $user")
     }
     //2.Can I apply?(是否可以申请)
+    //获取requestResouceService  spark是 DriverAndYarnReqResourceService，其他em是default ，default 的canRequest方法 调用super的
     val reqService = getRequestResourceService(moduleInstance)
     try {
       if (!reqService.canRequest(moduleInstance, user, creator, resource))
@@ -236,6 +237,7 @@ class DefaultResourceManager extends ResourceManager with Logging with Initializ
     //2.Can I apply?(是否可以申请)
     val reqService = getRequestResourceService(moduleInstance)
     try {
+      //剩余资源的判断并没有加锁的
       if (!reqService.canRequest(moduleInstance, user, creator, resource))
         return NotEnoughResource(s"user：$user not enough resource")
     } catch {
@@ -260,8 +262,11 @@ class DefaultResourceManager extends ResourceManager with Logging with Initializ
       }
 
       //4.Broadcast resource application(广播资源申请)
+      //生成tickedId
       val tickedId = UUID.randomUUID().toString
+      //封装预使用资源，预使用资源就是锁定资源，或者init引擎资源。。很多种说法
       val userPreUsedResource = UserPreUsedResource(tickedId, moduleInstance, resource)
+      //真正对数据库中资源进行加减法
       userResourceManager.dealUserPreUsedEvent(new UserPreUsedEvent(EventScope.User, user, creator, userPreUsedResource))
 
       if (RMConfiguration.RM_WAIT_EVENT_TIME_OUT.getValue > 0) Utils.defaultScheduler.schedule(
@@ -271,6 +276,7 @@ class DefaultResourceManager extends ResourceManager with Logging with Initializ
       )
 
       info(s"$user succeed to request resource：$resource")
+      //申请后返回ticketid给Enginemanger
       AvailableResource(tickedId)
     } {
       //5.Release lock(释放锁)
@@ -423,7 +429,9 @@ class DefaultResourceManager extends ResourceManager with Logging with Initializ
     //2.Can I apply?(是否可以申请)
     val requestResourceService = moduleResourceRecordService.getModulePolicy(moduleInstance.getApplicationName) match {
       case Yarn => requestResourceServices.find(requestResourceService => requestResourceService != null && requestResourceService.requestPolicy == Yarn)
+        //spark的
       case DriverAndYarn => requestResourceServices.find(requestResourceService => requestResourceService != null && requestResourceService.requestPolicy == DriverAndYarn)
+        //其他引擎
       case _ => requestResourceServices.find(requestResourceService => requestResourceService != null && requestResourceService.requestPolicy == Default)
     }
     if (requestResourceService.isEmpty)

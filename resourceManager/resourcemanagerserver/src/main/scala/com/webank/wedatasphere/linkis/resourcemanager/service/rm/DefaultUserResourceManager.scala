@@ -155,7 +155,9 @@ class DefaultUserResourceManager extends UserResourceManager with Logging {
     info(s"${event.user} from module：${event.userPreUsedResource.moduleInstance} request preUseResource：${event.userPreUsedResource}")
     val preUsedResource = event.userPreUsedResource
     Utils.tryAndError {
+      //module 资源表中，将lock资源+=预使用资源，剩余资源减少
       moduleResourceRecordService.moduleLockedUserResource(preUsedResource.moduleInstance, preUsedResource.resource)
+      //uer 资源表中插入记录
       userResourceRecordService.putUserModulePreUsed(event)
       //      val moduleInstanceRecord = moduleInstanceMap.getOrElse(event.moduleName, ModuleInstanceRecord(event.moduleName, 0, 0))
       //      moduleInstanceMap(event.moduleName) = ModuleInstanceRecord(moduleInstanceRecord.moduleName, moduleInstanceRecord.start, moduleInstanceRecord.locked + 1)

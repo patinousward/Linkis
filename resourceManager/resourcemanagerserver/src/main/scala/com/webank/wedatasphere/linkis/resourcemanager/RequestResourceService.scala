@@ -35,27 +35,36 @@ abstract class RequestResourceService(userMetaData: UserMetaData, userResourceRe
 
   def canRequest(moduleInstance: ServiceInstance, user: String, creator: String, requestResource: Resource): Boolean = {
     // Global instance limit check
+    //rpc请求，获取用户全局设置参数中的instance实例的总数量
     val userAvailableInstances = userMetaData.getUserGlobalInstanceLimit(user)
+    //从数据库获取当前user  所起的引擎的实例数
     val userExistingInstances = userResourceRecordService.getUserResourceRecordByUser(user).length
     info(s"user ${user} available instances: ${userAvailableInstances}, started instances: ${userExistingInstances}")
+    //目前所起的引擎实例如果》=限制，此次引擎的资源申请抛出异常
     if (userAvailableInstances <= userExistingInstances) {
       info(s"user ${user} can start ${userAvailableInstances} instances, but already have ${userExistingInstances} started.")
       throw new RMWarnException(111005, s"The user ${user} has started ${userExistingInstances} engines, and the number of global compute engine instances is limited to ${userAvailableInstances}, which failed to start.(用户 ${user} 已启动 ${userExistingInstances} 个引擎，而全局计算引擎实例数限制为 ${userAvailableInstances} 个，启动失败。)")
     }
-
+    //从数据库获取 module（engineManger） 的资源记录
     val moduleResourceRecord = moduleResourceRecordService.getModuleResourceRecord(moduleInstance)
+    //获取剩余资源
     val moduleLeftResource = moduleResourceRecordService.deserialize(moduleResourceRecord.getLeftResource)
+    //获取保护资源
     val protectedResource = moduleResourceRecordService.deserialize(moduleResourceRecord.getProtectedResource)
+    //剩余资源-保护资源< 申请资源的话抛出异常 --这里只是统计某个sparkEM的
     if ((moduleLeftResource - requestResource) < protectedResource) {
       info(s"moduleInstance:$moduleInstance left resource: ${moduleLeftResource} -  requestResource：$requestResource < protectedResource:${protectedResource}")
       throw new RMWarnException(111005, s"${generateNotEnoughMessage(requestResource, moduleLeftResource)}")
     }
+    //AvailableResource 就是能使用的max资源，优先从configuration 的rpc请求参数中获取
     val (moduleAvailableResource, creatorAvailableResource) = userMetaData.getUserAvailableResource(moduleInstance.getApplicationName, user, creator)
 
     val (moduleUsedResource, creatorUsedResource) = userResourceRecordService.getModuleAndCreatorResource(moduleInstance.getApplicationName, user, creator, requestResource)
-
+    //moduleAvailableResource 资源需要大于moduleUsedResource（包括所有的sparkEM的实例（不同节点进行分布的时候）已经使用资源的总和）
+    //creatorAvailableResource 资源需要大于creatorUsedResource，同样也是统计所有的sparkEM的
     if (moduleAvailableResource.resource >= moduleUsedResource) if (creatorAvailableResource.resource >= creatorUsedResource)
       true
+      //其他全部抛出异常
     else {
       info(s"creator:$creator for $user had used module resource:$creatorUsedResource > creatorAvailableResource:${creatorAvailableResource.resource} ")
       throw new RMWarnException(111007, s"${generateNotEnoughMessage(creatorUsedResource, creatorAvailableResource.resource)}")
@@ -144,13 +153,16 @@ class DriverAndYarnReqResourceService(userMetaData: UserMetaData, userResourceRe
   override val requestPolicy: ResourceRequestPolicy = DriverAndYarn
 
   override def canRequest(moduleInstance: ServiceInstance, user: String, creator: String, requestResource: Resource): Boolean = {
+    //先调用super方法进行判断
     if (!super.canRequest(moduleInstance, user, creator, requestResource)) return false
     val driverAndYarnResource = requestResource.asInstanceOf[DriverAndYarnResource]
     val yarnResource = driverAndYarnResource.yarnResource
+    //从queuename 获取yarn资源的最大容量和已经使用的资源
     val (maxCapacity, usedCapacity) = YarnUtil.getQueueInfo(yarnResource.queueName)
     info(s"This queue:${yarnResource.queueName} used resource:$usedCapacity and max resource：$maxCapacity")
     val queueLeftResource = maxCapacity - usedCapacity //Add a collection of queue resource usage records(新增一个queue资源使用记录的集合)
     info(s"queue: ${yarnResource.queueName} left $queueLeftResource this request：$yarnResource ")
+    //如果申请的yarn资源大于剩余资源，抛出异常
     if (queueLeftResource < yarnResource) {
       info(s"User: $user request queue (${yarnResource.queueName}) resource $yarnResource is greater than queue (${yarnResource.queueName}) remaining resources $queueLeftResource(用户:$user 请求的队列（${yarnResource.queueName}）资源$yarnResource 大于队列（${yarnResource.queueName}）剩余资源$queueLeftResource)")
       throw new RMWarnException(111007, s"${generateNotEnoughMessage(yarnResource, queueLeftResource)}")

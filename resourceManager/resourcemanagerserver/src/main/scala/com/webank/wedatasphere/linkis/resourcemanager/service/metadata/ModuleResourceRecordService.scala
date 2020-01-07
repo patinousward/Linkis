@@ -55,7 +55,7 @@ class ModuleResourceRecordService extends Logging {
       emMetaDataDao.update(emMetaData)
     }
   }
-
+  //从linkis_em_meta_data 中 映射的enginemanager的applcationName 和资源请求政策 的映射关系，获取相应的请求政策
   def getModulePolicy(moduleName: String): ResourceRequestPolicy.ResourceRequestPolicy = {
     val emMetaData = emMetaDataDao.getByEmName(moduleName)
     if (emMetaData == null) throw new RMErrorException(110005, s"Module(模块): $moduleName Not registered in the resource manager(并没有在资源管理器进行注册)") else ResourceRequestPolicy.withName(emMetaData.getResourceRequestPolicy)
@@ -111,6 +111,7 @@ class ModuleResourceRecordService extends Logging {
     val existing = getByEmInstance(moduleInstance.getApplicationName, moduleInstance.getInstance)
     if (existing == null)
       throw new RMErrorException(110005, s"Module instance(模块实例): $moduleInstance Not registered in the resource manager(并没有在资源管理器进行注册)")
+    //lock资源增加，剩余资源减少
     existing.setLeftResource(serialize(deserialize(existing.getLeftResource) - resource))
     existing.setLockedResource(serialize(deserialize(existing.getLockedResource) + resource))
     update(existing)

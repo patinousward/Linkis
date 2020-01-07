@@ -101,7 +101,7 @@ object YarnUtil extends Logging{
     }
   }
 
-
+  //http请求吧
   def getQueueInfo(queueName: String): (YarnResource, YarnResource) = {
     val url = dispatch.url(rm_web_address) / "ws" / "v1" / "cluster" / "scheduler"
     url.setContentType("application/json", "UTF-8")

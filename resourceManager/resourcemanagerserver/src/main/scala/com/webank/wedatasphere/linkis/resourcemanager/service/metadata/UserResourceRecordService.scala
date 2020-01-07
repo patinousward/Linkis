@@ -71,6 +71,7 @@ class UserResourceRecordService extends Logging {
       userResourceMetaDataDao.insert(newRecord)
       info(s"user add new ResourceRecords resource value:${userPreUsedResource.resource}")
     } else {
+      //这个分支有点奇怪，ticketId随机生成，这都能查出记录？？
       existing.setUserLockedResource(serialize(userPreUsedResource.resource))
       userResourceMetaDataDao.update(existing)
       info(s"user add new ResourceRecords resource value:${userPreUsedResource.resource}")
@@ -98,10 +99,13 @@ class UserResourceRecordService extends Logging {
   }
 
   def getModuleAndCreatorResource(moduleName: String, user: String, creator: String, requestResource: Resource): (Resource, Resource) = {
+    //获取用户使用的engine 资源的所有记录
     val userRecords = JavaConversions.asScalaBuffer(userResourceMetaDataDao.getByUser(user))
     var moduleResource = Resource.getZeroResource(requestResource)
     var creatorResource = Resource.getZeroResource(requestResource)
-
+    //循环遍历，找出所有applicationName和请求的相应的名字是一样的资源，进行累加
+    //moduleResource 就是所有module名为spark（spark只是打个比方）的某个user已经使用资源和锁定资源的总和
+    //creatorResource 就算所有module名为spakr的某个user，并且是某个creator的已经使用资源和锁定资源的总和
     if (userRecords != null && !userRecords.isEmpty) userRecords.foreach { resourceRecord =>
       if (resourceRecord.getEmApplicationName == moduleName) {
         info(s"moduleName:$moduleName used record:$resourceRecord")
@@ -115,6 +119,7 @@ class UserResourceRecordService extends Logging {
       }
     }
     info(s"Get user:$user on module used $moduleResource,and creator used:$creator, $creatorResource")
+    //加上请求的资源
     (moduleResource + requestResource, creatorResource + requestResource)
   }
 
