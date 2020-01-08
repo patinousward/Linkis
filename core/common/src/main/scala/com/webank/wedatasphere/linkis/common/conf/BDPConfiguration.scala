@@ -33,7 +33,7 @@ private[conf] object BDPConfiguration extends Logging {
   val DEFAULT_PROPERTY_FILE_NAME = "linkis.properties"
 
   private val config = new Properties
-  private val sysProps = sys.props
+  private val sysProps = sys.props //engine启动的时候 command包含了 -Dwds.linkis.configuration=linkis-engine.properties 这个配置将会到达sys.props
   private val extractConfig = new Properties
 
   private val env = sys.env
