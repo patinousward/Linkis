@@ -47,6 +47,7 @@ abstract class UdfLoadEngineHook extends EngineHook with Logging{ self =>
   protected def constructCode(udfInfo: UDFInfo): String
 
   override def beforeCreateEngine(params: JMap[String, String]): JMap[String, String] = {
+    //rpc请求udf模块,获取udfjar的路径
     creator = params.get("creator")
     user = params.get("user")
     initSpecialCode = getLoadUdfCode()
@@ -54,6 +55,7 @@ abstract class UdfLoadEngineHook extends EngineHook with Logging{ self =>
   }
 
   override def afterCreatedEngine(executor: EngineExecutor): Unit = {
+    //生成加载udf的语句
     generateCode().foreach {
       case "" =>
       case c: String =>

@@ -58,13 +58,16 @@ abstract class EngineExecutorManager extends ExecutorManager with Logging {
     if(executor == null) synchronized {
       if(executor == null) {
         var options: JMap[String, String] = DWCArgumentsParser.getDWCOptionMap
+        //beforeCreateEngine 生成初始化sql,主要是选择个人库和加载udf的
         getEngineHooks.foreach(hook => options = hook.beforeCreateEngine(options))
+        //创建一个executor
         executor = getOrCreateEngineExecutorFactory().createExecutor(options)
         executor.init()
         executor.setLogListener(jobLogListener)
         executor.setCodeParser(getOrCreateCodeParser())
         executor.setResultSetListener(resultSetListener)
         //TODO Consider adding timeout（考虑加上超时时间）
+        //创建完后先执行use 个人库和加载udf的命令
         getEngineHooks.foreach(_.afterCreatedEngine(executor))
         executorListener.foreach(executor.setExecutorListener)
         executorListener.foreach(_.onExecutorCreated(executor))

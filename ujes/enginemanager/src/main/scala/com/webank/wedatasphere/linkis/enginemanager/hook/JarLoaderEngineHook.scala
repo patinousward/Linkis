@@ -30,6 +30,7 @@ import org.codehaus.jackson.map.ObjectMapper
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable
+//这个是加载额外jar包的吧
 
 class JarLoaderEngineHook extends EngineHook with Logging{
 
