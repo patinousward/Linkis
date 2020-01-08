@@ -33,11 +33,13 @@ class IOResultSerializer extends ResultSerializer{
 
   override def recordToBytes(record: Record): Array[Byte] = {
     val ioRecord = record.asInstanceOf[IORecord]
+    //将字节数组 进行base64加密后转为string
     lineToBytes(Base64.encodeBase64String(ioRecord.value))
   }
 
   def lineToBytes(value: String): Array[Byte] = {
     val bytes = if(value == null) Dolphin.NULL_BYTES else Dolphin.getBytes(value)
+    //带上byte的长度
     Dolphin.getIntBytes(bytes.length) ++ bytes
   }
 }

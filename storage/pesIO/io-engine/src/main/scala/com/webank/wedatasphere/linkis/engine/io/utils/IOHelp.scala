@@ -26,13 +26,16 @@ object IOHelp {
   def read(fs: Fs, method: MethodEntity): String = {
     if (method.params == null || method.params.isEmpty) throw new StorageErrorException(53002,"read方法参数不能为空")
     val dest = MethodEntitySerializer.deserializerToJavaObject(method.params(0).asInstanceOf[String],classOf[FsPath])
+    //io-engine进行读取
     val inputStream = fs.read(dest)
     val resultSet = ResultSetFactory.getInstance.getResultSetByType(ResultSetFactory.IO_TYPE)
     val writer = ResultSetWriter.getResultSetWriter(resultSet, Long.MaxValue, null)
     Utils.tryFinally {
       if (method.params.length == 1) {
+        //将inpustream转化为字节数组
         val bytes = IOUtils.toByteArray(inputStream)
         val ioMetaData = new IOMetaData(0, bytes.length)
+        //封装为IORecord对象
         val ioRecord = new IORecord(bytes)
         writer.addMetaData(ioMetaData)
         writer.addRecord(ioRecord)

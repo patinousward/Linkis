@@ -76,7 +76,7 @@ class StorageResultSetWriter[K <: MetaData, V <: Record](resultSet: ResultSet[K,
       info(s"Succeed to create a new file:$storePath")
     }
   }
-
+  //writeLine只是将处理好的字节数组放到buffer中
   def writeLine(bytes: Array[Byte]): Unit = {
     if(buffer.length  > maxCacheSize) {
       if(outputStream == null) {
@@ -89,10 +89,11 @@ class StorageResultSetWriter[K <: MetaData, V <: Record](resultSet: ResultSet[K,
     }
   }
   override def toString: String = {
-   if(outputStream == null){
+   if(outputStream == null){  //对于自定义id流,输出路径为null,outputstream是为null的
      if(isEmpty) return ""
-      new String(buffer.toArray,Dolphin.CHAR_SET)
+      new String(buffer.toArray,Dolphin.CHAR_SET) //将buffer转为string
     } else {
+     //输出流不为null则返回写结果集的路径
       storePath.getPath
     }
   }

@@ -150,6 +150,7 @@ class IOMethodInterceptor(fsType: String) extends MethodInterceptor with Logging
         new IOOutputStream(args)
       case "renameTo" =>
         if (!inited || args.length < 2) throw new IllegalAccessException("storage has not been inited.")
+        //params 序列化,连同方法名提交到io-engine中进行执行
         val params = args.map(MethodEntitySerializer.serializerJavaObject(_)).map(_.asInstanceOf[AnyRef])
         executeMethod(method.getName, params)
         new java.lang.Boolean(true)
@@ -291,7 +292,7 @@ class IOMethodInterceptor(fsType: String) extends MethodInterceptor with Logging
     private var firstWrite = true
 
     override def write(b: Int): Unit = cached synchronized {
-      if (index >= cacheSize) write
+      if (index >= cacheSize) write  //write方法和read方法相反,将字节在entrance这边进行序列化,发送给io-engine后反序列化写到文件中
       cached(index) = b.toByte
       index += 1
     }
