@@ -31,8 +31,8 @@ class SparkCommonProcessEngine(override val processBuilder: ProcessEngineBuilder
   private var yarnAppId: String = _
 
   override def dealStartupLog(line: String): Unit = {
-    println(getPort + ": " + line)
-    if(StringUtils.isEmpty(yarnAppId)) {
+    println(getPort + ": " + line)  //直接使用print打印日志
+    if(StringUtils.isEmpty(yarnAppId)) {//获取yarnAppid的日志
       if (line.contains("application_")) {
         val appIdStr = line.split("\\s+").filter(x => x.startsWith("application_")).toList
         if (appIdStr.size > 0) {

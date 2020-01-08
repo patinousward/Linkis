@@ -100,7 +100,7 @@ trait ProcessEngine extends Engine with Logging {
     initedTime = System.currentTimeMillis
   }
 
-  protected def dealStartupLog(line: String): Unit = println(getPort + ": " + line)
+  protected def dealStartupLog(line: String): Unit = println(getPort + ": " + line)  //直接print 打印日志
 
   protected def transition(state: EngineState): Unit = this synchronized
     _state match {
