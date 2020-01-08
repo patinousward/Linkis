@@ -36,6 +36,7 @@ import scala.concurrent.{Future, TimeoutException}
 /**
   * Created by johnnwang on 2018/9/6.
   */
+//继续丰富顶层Engien的信息
 trait ProcessEngine extends Engine with Logging {
   val processBuilder: ProcessEngineBuilder
   val dwcArgumentsParser: DWCArgumentsParser
@@ -64,9 +65,10 @@ trait ProcessEngine extends Engine with Logging {
   def getInitErrorMsg = initErrorMsg
 
   override def init(): Unit = {
+    //执行shell命令
     process = processBuilder.start(DWCArgumentsParser.formatToArray(dwcArgumentsParser))
     var exitCode: Option[Int] = None
-    Future {
+    Future {  //再次开启异步线程
       val iterator = IOUtils.lineIterator(process.getInputStream, Configuration.BDP_ENCODING.getValue)
       while(!EngineState.isCompleted(_state) && iterator.hasNext) {
         dealStartupLog(iterator.next())

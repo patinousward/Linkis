@@ -21,6 +21,9 @@ import com.webank.wedatasphere.linkis.resourcemanager.Resource
 /**
   * Created by johnnwang on 2018/9/6.
   */
+//小结:
+//EngineFactory,EngineCreator,ProcessEngineBuilder  三者只有EngineCreator 是真正创建引擎的,其他2个名字起得都有问题
+//EngineFactory也不是用来创建engien的,只是用来管理启动引擎的,包括和engine的心跳,保存启动引擎对象的缓存集合等
 abstract class EngineFactory {
 
   /**

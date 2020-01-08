@@ -36,7 +36,7 @@ abstract class AbstractEngineManager extends EngineManager with Logging {
 
   private implicit val executor = AbstractEngineManager.executor
   private var engineListener: Option[EngineListener] = None
-
+  //这个listener就是EnginemangerReceiver
   def setEngineListener(engineListener: EngineListener) = this.engineListener = Some(engineListener)
 
   override def requestEngine(request: RequestEngine): Option[Engine] = requestEngine(request, 0)
@@ -73,6 +73,7 @@ abstract class AbstractEngineManager extends EngineManager with Logging {
       case NotEnoughResource(reason) =>
         throw new EngineManagerWarnException(30001, LogUtils.generateWarn(reason))
       case AvailableResource(ticketId) =>
+        //资源足够,从resoucemanager一般回来都走这里
         //The first step: get the creation request(第一步：拿到创建请求)
         val engine = getEngineManagerContext.getOrCreateEngineCreator.create(ticketId, resource, realRequest)
         //engine中设置相应的资源,这个资源是初始化资源,也是上面request的资源
@@ -82,10 +83,13 @@ abstract class AbstractEngineManager extends EngineManager with Logging {
         }
         engineListener.foreach(_.onEngineCreated(realRequest, engine))
         getEngineManagerContext.getOrCreateEngineFactory.addEngine(engine)
+        //直接启动异步线程
         val future = Future {
           engine.init()
+          //启动完毕后调用engineHooks的afterCreatedSession方法:目前均无实现
           getEngineManagerContext.getOrCreateEngineHook.foreach(hook => hook.afterCreatedSession(engine, realRequest))
         }
+        //加上回调方法
         future onComplete  {
           case Failure(t) =>
             error(s"init ${engine.toString} failed, now stop and delete it.", t)
@@ -98,21 +102,8 @@ abstract class AbstractEngineManager extends EngineManager with Logging {
             engineListener.foreach(_.onEngineInited(engine))
         }
         if(duration > 0 && System.currentTimeMillis - startTime < duration)
+          //一般走这步,然后其实也会抛出异常,但是被catch了没有抛出来
           Utils.tryQuietly(Await.result(future, Duration(System.currentTimeMillis - startTime, TimeUnit.MILLISECONDS)))
-//        if(duration > 0) {
-//          val leftTime = duration - System.currentTimeMillis + startTime
-//          Utils.tryThrow(Await.result(future, Duration(leftTime, TimeUnit.MILLISECONDS))) {t =>
-//            t match {
-//              case _: TimeoutException =>
-//                error(s"wait for ${engine.toString} completing initial failed, reason: sessionManager wait for too long time, killed!")
-//              case _: InterruptedException =>
-//                error(s"wait for ${engine.toString} completing initial failed, reason: killed by user!")
-//              case _ =>
-//                error(s"wait for ${engine.toString} completing initial failed!", t)
-//            }
-//            engine.stop()
-//          }
-//        }
         Some(engine)
     }
   }

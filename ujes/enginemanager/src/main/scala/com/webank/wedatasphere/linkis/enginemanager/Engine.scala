@@ -22,6 +22,7 @@ import com.webank.wedatasphere.linkis.resourcemanager.Resource
 /**
   * Created by johnnwang on 2018/9/6.
   */
+//engien是对启动引擎的抽象类,类似Entrance中的EntranceEngine,但是关注点在资源,端口号等上面
 abstract class Engine {
 
   private var resource: Resource = _
@@ -46,7 +47,7 @@ abstract class Engine {
   def getUser: String
   def getCreateTime: Long
   def getInitedTime: Long
-  def getTicketId: String
+  def getTicketId: String //申请资源的uuid
   def getState: EngineState
 
   override def toString: String = getClass.getSimpleName + s"(port: $getPort, creator: $getCreator, user: $getUser)"

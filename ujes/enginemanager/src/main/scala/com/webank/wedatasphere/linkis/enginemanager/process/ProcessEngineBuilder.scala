@@ -23,6 +23,8 @@ import com.webank.wedatasphere.linkis.protocol.engine.RequestEngine
 /**
   * Created by johnnwang on 2018/9/6.
   */
+
+//ProcessEngineBuilder 不是用来创建Engine的,最主要的build方法只是用来根据请求参数封装ProcessEngineBuilder对象本身
 trait ProcessEngineBuilder extends Logging {
   def setPort(port: Int): Unit
   def build(engineRequest: EngineResource, request: RequestEngine): Unit

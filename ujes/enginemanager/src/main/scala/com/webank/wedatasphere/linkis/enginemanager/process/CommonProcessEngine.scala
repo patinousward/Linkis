@@ -20,6 +20,7 @@ import com.webank.wedatasphere.linkis.common.conf.DWCArgumentsParser
 /**
   * Created by johnnwang on 2018/10/11.
   */
+//一般的processEngine实现类,除了spark外都用这个
 class CommonProcessEngine(override val processBuilder: ProcessEngineBuilder,
                           override val dwcArgumentsParser: DWCArgumentsParser,
                           override val timeout: Long) extends ProcessEngine {

@@ -100,6 +100,7 @@ class EngineManagerReceiver extends Receiver with EngineListener with Logging wi
     case request: RequestEngine =>
       if(StringUtils.isBlank(request.creator)) throw new EngineManagerErrorException(20050, "creator cannot be empty.")
       else if(StringUtils.isBlank(request.user)) throw new EngineManagerErrorException(20050, "user cannot be empty.")
+      //目前一般的duration都不是null的
       val engine = if(duration != null) engineManager.requestEngine(request, duration.toMillis)
       else engineManager.requestEngine(request)
       engine.map {
@@ -113,7 +114,7 @@ class EngineManagerReceiver extends Receiver with EngineListener with Logging wi
       ResponseUserEngineKill(request.ticketId, ResponseUserEngineKill.Success, "")
     case _ => warn(s"cannot recognize the message $message.")
   }
-
+  //这个方法是ApplicationContextAware 在spring容器中被调用然后进行赋值的
   override def setApplicationContext(applicationContext: ApplicationContext): Unit =
     EngineManagerReceiver.applicationContext = applicationContext
 
@@ -190,5 +191,6 @@ object EngineManagerReceiver {
   def isEngineBelongTo(instance: String): Boolean = instance.startsWith(address)
 
   private var applicationContext: ApplicationContext = _
+  //从applicationContext中获取相应的key值
   def getSpringConf(key: String): String = applicationContext.getEnvironment.getProperty(key)
 }

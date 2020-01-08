@@ -21,6 +21,7 @@ import com.webank.wedatasphere.linkis.protocol.engine.RequestEngine
 /**
   * Created by johnnwang on 2018/9/6.
   */
+//真正意义上创建Engine的方法
 trait EngineCreator {
   def create(ticketId: String, engineRequest: EngineResource, request: RequestEngine): Engine
 }

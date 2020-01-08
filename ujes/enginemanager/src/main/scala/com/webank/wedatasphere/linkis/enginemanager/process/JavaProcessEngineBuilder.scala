@@ -32,6 +32,7 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * Created by johnnwang on 2018/10/11.
   */
+//用来启动java 微服务的ProcessEngineBuilder,除了spark外,其余只需要简单实现这个类就好了
 abstract class JavaProcessEngineBuilder extends ProcessEngineBuilder {
 
   protected var port: Int = _
@@ -84,6 +85,8 @@ abstract class JavaProcessEngineBuilder extends ProcessEngineBuilder {
 
   override def start(args: Array[String]): Process = {
     commandLine += args.mkString(" ")
+    //request.user  expect 脚本的第一个参数
+    // commandLine.mkString(" ")  expect脚本的第二个参数
     val command = Seq(JavaProcessEngineBuilder.sudoUserScript.getValue, request.user, commandLine.mkString(" "))
     val pb = new ProcessBuilder(command:_*)
     info("Running " + command.mkString(" "))
@@ -132,6 +135,7 @@ object JavaProcessEngineBuilder {
     val realPath = parentFile.list().find(f => f == "config" || f == "conf")
     parentFile.getAbsolutePath + File.separator + realPath.getOrElse("")
   })
+  //切换用户的脚本
   val sudoUserScript = CommonVars[String]("wds.linkis.enginemanager.sudo.script", {
     val url = Thread.currentThread().getContextClassLoader.getResource("rootScript.sh")
     if (url == null) new File(engineManagerConfigPath.getValue, "util/rootScript.sh").getAbsolutePath
