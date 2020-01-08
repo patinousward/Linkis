@@ -221,6 +221,9 @@ class IOMethodInterceptor(fsType: String) extends MethodInterceptor with Logging
       if (fetched == null || fetched.length == 0) return -1
       val v = fetched(index)
       index += 1
+      //int 是32位,byte是8位,计算机内存存的是补码
+      //当byte要转化为int的时候，高的24位必然会补1，这样，其二进制补码其实已经不一致了，&0xff可以将高的24位置为0，低8位保持原样。这样做的目的就是为了保证二进制数据的一致性
+      //应该是v和oxff先自动类型提升位int,再进行运算
       v & 0xff
     }
 
