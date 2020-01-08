@@ -66,9 +66,10 @@ trait ProcessEngine extends Engine with Logging {
 
   override def init(): Unit = {
     //执行shell命令
+    //Process的子类的一个实例，这个实例可以用来控制进程以及获得进程的信息
     process = processBuilder.start(DWCArgumentsParser.formatToArray(dwcArgumentsParser))
     var exitCode: Option[Int] = None
-    Future {  //再次开启异步线程
+    Future {  //再次开启异步线程,获取process信息
       val iterator = IOUtils.lineIterator(process.getInputStream, Configuration.BDP_ENCODING.getValue)
       while(!EngineState.isCompleted(_state) && iterator.hasNext) {
         dealStartupLog(iterator.next())
@@ -76,11 +77,14 @@ trait ProcessEngine extends Engine with Logging {
       exitCode = Option(process.waitFor)
       warn(s"$toString has stopped with exit code " + exitCode)
       if(exitCode.exists(_ != 0)) {
-        transition(Error)
+        transition(Error)//状态翻转
       } else {
-        transition(Dead)
+        transition(Dead)//状态翻转
       }
     }
+    //线程阻塞,直到engine状态不为staring(engine一开始状态就是staring)
+    //阻塞,要么shell脚本执行本身是失败的,翻转为error,dead,正常情况下,这里会一致阻塞到engine启动完成,并且rpc通知engineManager的
+    //状态进行修改,这里就会继续
     Utils.tryThrow(Utils.waitUntil(() => _state != Starting, Duration(timeout, TimeUnit.MILLISECONDS))) {
       case _: TimeoutException =>
         warn(s"wait for $toString initial timeout, now shutdown it.")

@@ -82,6 +82,7 @@ abstract class AbstractEngineManager extends EngineManager with Logging {
           case a: AbstractEngineCreator => a.removePort(engine.getPort)
         }
         engineListener.foreach(_.onEngineCreated(realRequest, engine))
+        //将engine加入到缓存中,方便Engine启动成功后,发送rpc请求,修改engine的状态
         getEngineManagerContext.getOrCreateEngineFactory.addEngine(engine)
         //直接启动异步线程
         val future = Future {
@@ -91,6 +92,7 @@ abstract class AbstractEngineManager extends EngineManager with Logging {
         }
         //加上回调方法
         future onComplete  {
+              //这个监听方法只是做一些移除缓存的操作
           case Failure(t) =>
             error(s"init ${engine.toString} failed, now stop and delete it.", t)
             removeInInitPort()

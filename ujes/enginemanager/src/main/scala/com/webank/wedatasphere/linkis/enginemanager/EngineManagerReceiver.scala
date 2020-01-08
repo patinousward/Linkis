@@ -69,12 +69,19 @@ class EngineManagerReceiver extends Receiver with EngineListener with Logging wi
   }
 
   override def receive(message: Any, sender: Sender): Unit = message match {
+    //engine启动后,发送rpc请求回来给engineManger
     case ResponseEnginePid(port, pid) =>
+      //接受engine 发送过来的pid,sender信息
       findEngine(port).foreach(_.callback(pid, sender))
+      //接受engine 发送过来的engine状态(EngineReceiver 单例启动完就发送了)
     case ResponseEngineStatusCallback(port, status, initErrorMsg) =>
       findEngine(port).foreach(_.callback(status, initErrorMsg))
       val obj = getMsg(EngineState(status), ResponseEngineStatusCallback(port, status, initErrorMsg))
       val _sender = portToSenders.get(port)
+
+      /**
+        * engine启动后通知entrance的存在,这个通知将唤醒entrance中的等待线程
+        */
       if(_sender != null) {
         //If the entity sent to the application fails, but the engine has started successfully, it will be broadcast directly later, so ignore the exception.
         //If the entity sent to the application fails, but the engine is still starting, wait until the result of the startup is processed again, so ignore the exception.
