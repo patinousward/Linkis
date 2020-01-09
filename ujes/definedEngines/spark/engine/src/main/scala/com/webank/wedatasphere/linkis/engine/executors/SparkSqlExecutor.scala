@@ -37,17 +37,19 @@ class SparkSqlExecutor(val sc: SparkContext,val sqlContext: SQLContext) extends 
   val queryNum = new AtomicLong(0)
 
   val SQL_EXTENSION_TIMEOUT = CommonVars("wds.linkis.dws.ujes.spark.extension.timeout",3000L)
-
+  //sparkEngineExecutor: SparkEngineExecutor 这个对象暂时没用上
   override def execute(sparkEngineExecutor: SparkEngineExecutor,code: String,engineExecutorContext: EngineExecutorContext,jobGroup:String): ExecuteResponse = {
 //    val jobGroup = String.valueOf("dwc-sql-" + queryNum.incrementAndGet())
 //    info("Set jobGroup to " + jobGroup)
 //    sc.setJobGroup(jobGroup, code, true)
     var rdd: Any = null
     info("SQLExecutor run query: " + code)
+    //推送下日志
     engineExecutorContext.appendStdout(s"${EngineUtils.getName} >> $code")
     try{
       val sqlStartTime = System.currentTimeMillis()
       val sqlMethod = sqlContext.getClass.getMethod("sql", classOf[String])
+      //反射调用sql 的方法,返回rdd
       rdd = sqlMethod.invoke(sqlContext, code)
 
       /**
@@ -58,6 +60,7 @@ class SparkSqlExecutor(val sc: SparkContext,val sqlContext: SQLContext) extends 
       /**
         * end
         */
+      //rdd转成结果集的方法
       SQLSession.showDF(sc, jobGroup, rdd, null, SparkConfiguration.SHOW_DF_MAX_RES.getValue,engineExecutorContext)
       SuccessExecuteResponse()
     } catch {

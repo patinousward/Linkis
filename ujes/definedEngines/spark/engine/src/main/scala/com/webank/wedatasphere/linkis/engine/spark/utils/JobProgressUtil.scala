@@ -11,6 +11,7 @@ import org.apache.spark.{JobExecutionStatus, SparkContext, SparkJobInfo}
   * Created by johnnwang on 2019/5/9.
   */
 object JobProgressUtil extends Logging{
+  //进度信息从sparkContext中获取即可
   def progress(sc: SparkContext, jobGroup : String):Float = {
     val jobIds = sc.statusTracker.getJobIdsForGroup(jobGroup)
     val jobs = jobIds.flatMap { id => sc.statusTracker.getJobInfo(id) }

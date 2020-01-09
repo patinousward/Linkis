@@ -60,7 +60,7 @@ class EngineExecutorContext(engineExecutor: EngineExecutor) extends Logging{
   def setTotalParagraph(totalParagraph: Int): Unit = this.totalParagraph = totalParagraph
   def getCurrentParagraph: Int = currentParagraph
   def setCurrentParagraph(currentParagraph: Int): Unit = this.currentParagraph = currentParagraph
-
+  //推送进度给前台的
   def pushProgress(progress: Float, progressInfo: Array[JobProgressInfo]): Unit =
     engineExecutor.getJobProgressListener.foreach(l => jobId.foreach(l.onProgressUpdate(_, progress, progressInfo)))
 

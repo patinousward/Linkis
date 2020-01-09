@@ -107,6 +107,7 @@ class SparkEngineExecutorFactory extends EngineExecutorFactory with Logging{
     scalaExecutor._sqlContext = sqlContext
     scalaExecutor.sparkSession = sparkSession
     //三大执行器的创建SparkSqlExecutor,ScalaExecutor,SparkPythonExecutor
+    //sqlContext 在三大执行器中都有
     val seq = Seq(new SparkSqlExecutor(sc, sqlContext),
                    scalaExecutor,
                   new SparkPythonExecutor(sc, sqlContext,sparkSession)

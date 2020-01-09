@@ -52,6 +52,7 @@ public class HiveSendAppender extends SendAppender{
     public void append(LogEvent event){
         //LOGGER.info("HiveSendAppender append");
         String log =  new String(getLayout().toByteArray(event));
+        //hive的进度是从日志中获取的,截取日志内容,然后推送到前台
         List<HiveProgress> hiveProgresses =  LogHelper.checkPattern(log);
         if (hiveProgresses != null && hiveProgresses.size() > 0){
             HiveProgressHelper.storeHiveProgress(hiveProgresses);
