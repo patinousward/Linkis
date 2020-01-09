@@ -38,9 +38,12 @@ abstract class AbstractScheduler extends Scheduler {
     (eventId.substring(index + 1).toInt, eventId.substring(0, index))
   }
   override def submit(event: SchedulerEvent): Unit = {
+    //entrance的groupname是creator + user
+    //ioEntrance的groupname只有file和hdfs 2个
     val groupName = getSchedulerContext.getOrCreateGroupFactory.getGroupNameByEvent(event)
     val consumer = getSchedulerContext.getOrCreateConsumerManager.getOrCreateConsumer(groupName)
     val index = consumer.getConsumeQueue.offer(event)
+    //job id 就是 groupname + 提交阻塞队列的最大index
     index.map(getEventId(_, groupName)).foreach(event.setId)
     if(index.isEmpty) throw  new SchedulerErrorException(12001,"The submission job failed and the queue is full!(提交作业失败，队列已满！)")
   }

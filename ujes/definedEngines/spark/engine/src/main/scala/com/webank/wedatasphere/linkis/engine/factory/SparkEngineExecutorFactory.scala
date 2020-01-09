@@ -47,14 +47,18 @@ class SparkEngineExecutorFactory extends EngineExecutorFactory with Logging{
   override def createExecutor(options: JMap[String, String]): SparkEngineExecutor = {
     info(s"Ready to create a Spark EngineExecutor ")
     val useSparkSubmit = true
-
+    //创建sparkConf
     val conf = new SparkConf(true).setAppName(options.getOrDefault("spark.app.name", "dwc-spark-apps"))
     val master = conf.getOption("spark.master").getOrElse(CommonVars("spark.master", "yarn").getValue)
     info(s"------ Create new SparkContext {$master} -------")
+    //获取sparkhome,就是pyspark的基本路径
     val pysparkBasePath = SparkConfiguration.SPARK_HOME.getValue
+    //拼接地址
     val pysparkPath = new File(pysparkBasePath, "python" + File.separator + "lib")
+    //找到sparkhome/python/lib/下的所有zip包
     val pythonLibUris = pysparkPath.listFiles().map(_.toURI.toString).filter(_.endsWith(".zip"))
     if (pythonLibUris.length == 2) {
+      //逗号分隔的文件列表，其指向的文件将被复制到每个执行器的工作目录下。
       val confValue1 = Utils.tryQuietly(CommonVars("spark.yarn.dist.files","").getValue)
       val confValue2 = Utils.tryQuietly(conf.get("spark.yarn.dist.files"))
       if(StringUtils.isEmpty(confValue1) && StringUtils.isEmpty(confValue2))
@@ -65,7 +69,10 @@ class SparkEngineExecutorFactory extends EngineExecutorFactory with Logging{
         conf.set("spark.yarn.dist.files", confValue1 + "," + pythonLibUris.mkString(","))
       else
         conf.set("spark.yarn.dist.files", confValue1 + "," + confValue2 + "," + pythonLibUris.mkString(","))
+      //conf中spark.yarn.dist.files的值为confValue1(engine配置中指定) + confValue2(conf中本身有的) + pythonLibUris
+      //这里相当于在提交sparksubmit的时候 --files
       if (!useSparkSubmit) conf.set("spark.files", conf.get("spark.yarn.dist.files"))
+      //设置spark.submit.pyFiles
       conf.set("spark.submit.pyFiles", pythonLibUris.mkString(","))
     }
     // Distributes needed libraries to workers
@@ -76,23 +83,30 @@ class SparkEngineExecutorFactory extends EngineExecutorFactory with Logging{
     val outputDir = createOutputDir(conf)
     info("outputDir====> " + outputDir)
     outputDir.deleteOnExit()
+    //创建scala的executor
     val scalaExecutor =  new SparkScalaExecutor(conf)
+    //设置输出目录
     scalaExecutor.outputDir = outputDir
-    scalaExecutor.start()
+    scalaExecutor.start()//开启
+    //等待sparkILoopInited变为true
     Utils.waitUntil(() => scalaExecutor.sparkILoopInited == true && scalaExecutor.sparkILoop.intp != null, new TimeType("120s").toDuration)
+    //设置线程类加载器,没有设置的话只能使用父类的
     Thread.currentThread().setContextClassLoader(scalaExecutor.sparkILoop.intp.classLoader)
     info("print current thread name "+ Thread.currentThread().getContextClassLoader.toString)
+    //创建sparkSession
     val sparkSession = createSparkSession(outputDir, conf)
     if (sparkSession == null) throw new SparkSessionNullException(40009, "sparkSession can not be null")
-
+    //获取sparkContext
     val sc = sparkSession.sparkContext
+    //创建sqlContext
     val sqlContext = createSQLContext(sc,options)
-    sc.hadoopConfiguration.set("mapred.output.compress", MAPRED_OUTPUT_COMPRESS.getValue(options))
-    sc.hadoopConfiguration.set("mapred.output.compression.codec",MAPRED_OUTPUT_COMPRESSION_CODEC.getValue(options))
+    sc.hadoopConfiguration.set("mapred.output.compress", MAPRED_OUTPUT_COMPRESS.getValue(options))//默认true
+    sc.hadoopConfiguration.set("mapred.output.compression.codec",MAPRED_OUTPUT_COMPRESSION_CODEC.getValue(options))//输出结果压缩格式GzipCodec
     println("Application report for " + sc.applicationId)
     scalaExecutor.sparkContext= sc
     scalaExecutor._sqlContext = sqlContext
     scalaExecutor.sparkSession = sparkSession
+    //三大执行器的创建SparkSqlExecutor,ScalaExecutor,SparkPythonExecutor
     val seq = Seq(new SparkSqlExecutor(sc, sqlContext),
                    scalaExecutor,
                   new SparkPythonExecutor(sc, sqlContext,sparkSession)
@@ -156,6 +170,7 @@ class SparkEngineExecutorFactory extends EngineExecutorFactory with Logging{
   def createOutputDir(conf: SparkConf): File = {
     val rootDir = getOption("spark.repl.classdir")
       .getOrElse(conf.getOption("spark.repl.classdir").getOrElse(SparkUtils.getLocalDir(conf)))
+    //创建临时目录  java.io.tmpdir/repl
     SparkUtils.createTempDir(root = rootDir, namePrefix = "repl")
   }
 

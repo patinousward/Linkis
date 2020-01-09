@@ -104,7 +104,7 @@ class LoopArrayQueue(var group: Group) extends ConsumeQueue{
   }
 
   def min = realSize
-
+  //max 和 min的意思是 整个阻塞队列的不断增加的index   max -min 就是整个数组的长度
   def max = {
     var _size = filledSize
     if(_size == 0) {

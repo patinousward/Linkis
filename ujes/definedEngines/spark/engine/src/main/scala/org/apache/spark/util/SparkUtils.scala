@@ -31,7 +31,7 @@ object SparkUtils {
     Utils.getLocalDir(conf)
   }
   def createTempDir(root: String = System.getProperty("java.io.tmpdir"),
-                    namePrefix: String = "spark"): File = Utils.createTempDir(root, namePrefix)
+                    namePrefix: String = "spark"): File = Utils.createTempDir(root, namePrefix)//Utils是spark的类,shutdown的时候会将文件删掉
 
   //  def getUserJars(conf : SparkConf, isShell : Boolean) = Utils.getUserJars(conf)
 

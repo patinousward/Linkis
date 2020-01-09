@@ -59,6 +59,7 @@ class ParallelConsumerManager(maxParallelismUsers: Int)extends  ConsumerManager{
     */
   override def getOrCreateConsumer(groupName: String) = if(consumerGroupMap.contains(groupName)) consumerGroupMap(groupName)
     else UJES_CONTEXT_CONSTRUCTOR_LOCK.synchronized {
+    //consumerGroupMap缓存中没有就创建,根据groupname
       consumerGroupMap.getOrElse(groupName, {
         //createConsumer  这里创建的也是一个fifo的FIFOUserConsumer
         val newConsumer = createConsumer(groupName)

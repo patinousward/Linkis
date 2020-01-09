@@ -43,7 +43,7 @@ abstract class EntranceServer extends Logging {
 
 
   /**
-    * Execute a task and return an execId(执行一个task，返回一个execId)
+    * Execute a task and return an execId(执行一个task，返回一个execId) 就是jobid,entrance中是groupName(creator+ username)+ 阻塞队列的maxid
     * @param params
     * @return
     */

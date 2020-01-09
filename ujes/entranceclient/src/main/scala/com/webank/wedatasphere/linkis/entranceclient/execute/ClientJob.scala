@@ -54,7 +54,7 @@ class ClientJob extends EntranceJob {
     override val code: String = getTask.asInstanceOf[ClientTask].getCode
     override val jobId: String = getId
   }
-
+  //creator是ujes,username  id是groupName + index clientjob的groupname是  file
   override def getName: String = getTask.asInstanceOf[ClientTask].getCreator + "_" + getTask.asInstanceOf[ClientTask].getUser + "_" + getId
 
   override def getJobInfo: JobInfo = null

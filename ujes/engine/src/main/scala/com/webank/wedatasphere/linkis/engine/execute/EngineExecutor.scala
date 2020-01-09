@@ -92,7 +92,9 @@ abstract class EngineExecutor(outputPrintLimit: Int, isSupportParallelism: Boole
     }
     executedNum += 1
     def ensureOp[A](f: => A): A = if(!this.engineInitialized) f
+      //并发执行的executor,只要available状态就可以执行f函数了
       else if(isSupportParallelism) whenAvailable(f) else ensureIdle(f)
+    //ensureOp后是函数的方法体
     ensureOp {
       val engineExecutorContext = createEngineExecutorContext(executeRequest)
       var response: ExecuteResponse = null
