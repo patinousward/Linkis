@@ -22,6 +22,7 @@ import com.webank.wedatasphere.linkis.scheduler.{AbstractScheduler, SchedulerCon
 /**
   * Created by enjoyyin on 2018/9/13.
   */
+//这个类的用处
 class ParallelScheduler(val schedulerContext: SchedulerContext) extends AbstractScheduler{
 
   private var consumerManager: ConsumerManager = _

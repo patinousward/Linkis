@@ -37,6 +37,7 @@ class EngineContextImpl extends EngineContext {
   private var engineParser: EngineParser = _
 
   @PostConstruct
+  //对于每个普通的engine来说,不同用户和creator的 job都在entrance进行分开提交了,每个engine是fifo的
   def init(): Unit = scheduler = new FIFOScheduler(schedulerContext)
 
   override def getOrCreateLockManager: LockManager = lockManager

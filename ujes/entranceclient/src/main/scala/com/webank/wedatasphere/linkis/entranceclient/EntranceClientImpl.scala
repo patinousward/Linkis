@@ -110,6 +110,7 @@ class EntranceClientImpl private() extends EntranceClient with EngineApplication
     if (entranceServer == null) {
       val schedulerContext = new EntranceSchedulerContext(groupFactory, new ParallelConsumerManager(maxParallelismUsers),
         new ClientEntranceExecutorManager(groupFactory, engineRequester, engineBuilder, engineSelector, new ClientEngineManager, entranceExecutorRulers))
+      //ParallelScheduler
       val scheduler = new ParallelScheduler(schedulerContext)
       val entranceContext = new DefaultEntranceContext(clientEntranceParser, new context.ClientPersistenceManager, new context.ClientLogManager,
         scheduler, interceptors, null, Array.empty)

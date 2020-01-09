@@ -201,6 +201,7 @@ public class EntranceSpringConfiguration {
     @SchedulerBeanAnnotation
     @ConditionalOnMissingBean(name = {SchedulerBeanAnnotation.BEAN_NAME})
     public Scheduler generateScheduler(@SchedulerContextBeanAnnotation.SchedulerContextAutowiredAnnotation SchedulerContext schedulerContext){
+        //entrance和client这边都是ParallelScheduler这种类型的
         Scheduler scheduler = new ParallelScheduler(schedulerContext);
         scheduler.init();
         scheduler.start();
