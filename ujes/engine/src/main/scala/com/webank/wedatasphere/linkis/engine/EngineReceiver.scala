@@ -292,6 +292,7 @@ class EngineReceiver extends Receiver with JobListener with ProgressListener wit
   }
 
   override def onJobCompleted(job: Job): Unit = {
+    //job执行complete的时候进行剩余日志的推送
     LogHelper.pushAllRemainLogs()
     if(!SchedulerEventState.isSucceed(job.getState))
       send(job, ResponseTaskError(job.getId, job.getErrorResponse.message))

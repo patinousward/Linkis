@@ -32,7 +32,7 @@ object LogHelper {
   private val logger = LoggerFactory.getLogger(getClass)
   val logCache = new MountLogCache(EngineConfiguration.ENGINE_LOG_CACHE_NUM.getValue)
   private var logListener:LogListener = _
-
+  //logListener是EngineReceiver
   def setLogListener(logListener: LogListener):Unit = this.logListener = logListener
 
   def pushAllRemainLogs():Unit = {
@@ -45,6 +45,7 @@ object LogHelper {
       }else{
         var logs:util.List[String] = null
         logCache.synchronized{
+          //获取logCache中剩余的日志,推送到EngienReceiver
           logs = logCache.getRemain
         }
         if (logs != null && logs.size > 0) {

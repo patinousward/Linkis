@@ -47,7 +47,7 @@ public class SendAppender extends AbstractAppender {
      * @fields serialVersionUID
      */
     private static final long serialVersionUID = -830237775522429777L;
-    private static LogListener logListener;
+    private static LogListener logListener; //这里的listern虽然进行了赋值,但是没有起到响应的作用
     private LogCache logCache;
     private static final Logger logger = LoggerFactory.getLogger(SendAppender.class);
 
@@ -79,11 +79,13 @@ public class SendAppender extends AbstractAppender {
         super(name, filter, layout, ignoreExceptions);
         //todo enjoyyin 500 to be made configurable ide number（500要做成可配置ide数字）
         //this.logCache = new MountLogCache((Integer) EngineConfiguration.ENGINE_LOG_CACHE_NUM().getValue());
+        //对logCache进行赋值
         this.logCache = LogHelper.logCache();
+        //定时发送remain日志,没啥用
         SendThread thread = new SendThread();
         Utils.defaultScheduler().scheduleAtFixedRate(thread, 10, (Integer)EngineConfiguration$.MODULE$.ENGINE_LOG_SEND_TIME_INTERVAL().getValue(), TimeUnit.MILLISECONDS);
     }
-
+    //这里的listener也是EngienReceiver
     public static void setLogListener(LogListener ll){
         logListener = ll;
     }
@@ -97,10 +99,12 @@ public class SendAppender extends AbstractAppender {
         if (logListener == null) {
             return;
         }
+        //appeng,将日志进行缓存
         logCache.cacheLog(new String(getLayout().toByteArray(event)));
     }
 
     @PluginFactory
+    //https://blog.csdn.net/z69183787/article/details/51776323
     public static SendAppender createAppender(@PluginAttribute("name") String name,
                                               @PluginElement("Filter") final Filter filter,
                                               @PluginElement("Layout") Layout<? extends Serializable> layout,
@@ -112,6 +116,7 @@ public class SendAppender extends AbstractAppender {
         if (layout == null) {
             layout = PatternLayout.createDefaultLayout();
         }
+        //创建SendAppender对象
         return new SendAppender(name, filter, layout, ignoreExceptions);
     }
 

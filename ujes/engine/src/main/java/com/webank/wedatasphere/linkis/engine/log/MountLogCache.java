@@ -30,10 +30,11 @@ import java.util.List;
  * created by enjoyyin on 2018/11/27
  * Description:
  */
+//正真使用的LogCache
 public class MountLogCache extends AbstractLogCache{
 
     private static final Logger logger = LoggerFactory.getLogger(MountLogCache.class);
-
+    //环形数组用来防止日志大量的时候造成的oom
     class CircularQueue{
 
         private int max;
@@ -105,7 +106,7 @@ public class MountLogCache extends AbstractLogCache{
     private CircularQueue logs;
 
 
-
+    //创建cache对象的时候进行创建环形数组
     public MountLogCache(int loopMax){
         this.logs = new CircularQueue(loopMax);
     }
@@ -113,17 +114,17 @@ public class MountLogCache extends AbstractLogCache{
     @Override
     public void cacheLog(String log) {
         logs.enqueue(log);
-    }
+    }//入队列
 
     @Override
     public List<String> getLog(int num) {
         return logs.dequeue(num);
-    }
+    }//出出列
 
     @Override
     public List<String> getRemain() {
         return logs.getRemain();
-    }
+    }//获取剩余的日志
 
     @Override
     public int size() {
