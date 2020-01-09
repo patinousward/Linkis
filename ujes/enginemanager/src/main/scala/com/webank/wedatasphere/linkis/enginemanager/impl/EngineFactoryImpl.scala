@@ -57,6 +57,7 @@ class EngineFactoryImpl(rmClient: ResourceManagerClient) extends EngineFactory w
         //TODO special support for eureka
         val aliveEngines = portToEngines.filter{ case (_, engine) => EngineState.isAvailable(engine.getState) &&
           engine.getInitedTime > 0 && System.currentTimeMillis - engine.getInitedTime > ENGINE_CAN_SCAN_AFTER_INIT.getValue.toLong}
+        //从feign 中获取所有的相应的engine的信息,不存在的就删掉
         val existsEngineInstances = Sender.getInstances(ENGINE_SPRING_APPLICATION_NAME.getValue).map(_.getInstance)
         aliveEngines.filter{ case (port, engine) =>
             val instance = EngineManagerReceiver.getInstanceByPort(port)
@@ -67,6 +68,8 @@ class EngineFactoryImpl(rmClient: ResourceManagerClient) extends EngineFactory w
             } else true
         }.foreach { case (_, engine: ProcessEngine) =>
           //The third step is to remove the engine that is not responding.(第三步、去掉没有响应的engine)
+          //定时给engine心跳,没有响应的就去掉
+          //所以entrance中的engine的定时管理engine好像没啥必要性
           Utils.tryCatch(engine.tryHeartbeat()) { t =>
             warn(s"heartbeat to $engine failed, now mark it as Failed, and unregister it for RM.", t)
             delete(engine)
@@ -110,7 +113,9 @@ class EngineFactoryImpl(rmClient: ResourceManagerClient) extends EngineFactory w
       val removed = portToEngines.remove(engine.getPort)
       if(removed != null) {
         info(s"ready to delete $engine.")
+        //调用shutdown方法
         Utils.tryAndWarn(removed.shutdown())
+        //rm释放资源
         Utils.tryAndWarn(rmClient.resourceReleased(UserResultResource(removed.getTicketId, removed.getUser)))
         info(s"deleted $removed.")
       }

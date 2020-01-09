@@ -44,12 +44,14 @@ class SparkCommonProcessEngine(override val processBuilder: ProcessEngineBuilder
   }
 
   override def shutdown(): Unit ={
+    //sparkEngine的主要是执行shell脚本 yarn application -kill
    if(StringUtils.isNotEmpty(yarnAppId)){
      info(s"try to kill yarn app with id($yarnAppId).")
      Utils.tryQuietly(
      Utils.exec(Array(JavaProcessEngineBuilder.sudoUserScript.getValue, getUser, s"yarn  application -kill  $yarnAppId"), 3000l)
      )
    }
+    //调用父类的方法
     super.shutdown()
   }
 

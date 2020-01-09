@@ -145,6 +145,7 @@ trait ProcessEngine extends Engine with Logging {
     process.destroy()
     var tryNum = 1
     while(isProcessAlive && tryNum <= 3) {
+      //尝试kill pid 最后一次kill -9
       info(s"$toString still alive with pid($pid), use shell command to kill it. try $tryNum++")
       if(tryNum < 3) Utils.exec(Array(JavaProcessEngineBuilder.sudoUserScript.getValue, getUser, s"kill $pid"), 3000l)
       else Utils.exec(Array(JavaProcessEngineBuilder.sudoUserScript.getValue, getUser, s"kill -9 $pid"), 3000l)
@@ -154,6 +155,7 @@ trait ProcessEngine extends Engine with Logging {
     info(s"Stopped $toString.")
   } else {
     info(s"try to kill $toString with RPC kill command.")
+    //pid没有的话,发送rpc请求让engine自杀
     sender.send(RequestKillEngine("", Sender.getThisServiceInstance.getApplicationName, Sender.getThisServiceInstance.getInstance))
   }
 
