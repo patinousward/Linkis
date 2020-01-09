@@ -26,6 +26,9 @@ import scala.collection.mutable.ArrayBuffer
 /**
   * Created by johnnwang on 2018/10/30.
   */
+//IOEngine的也是fifo的Scheduler,但是支持Parallelism,不需要等engine状态由busy转为idle即可进行执行
+//但是感觉并发还是有点弱
+//但是ioengine作为常驻的引擎,只有file和hdfs2个是正常的,只能有2个,所以io-entranc只有2种goupname
 class IOEngineExecutor extends EngineExecutor(outputPrintLimit = 10, true) with ConcurrentTaskOperateSupport with Logging{
 
   implicit val formats = DefaultFormats

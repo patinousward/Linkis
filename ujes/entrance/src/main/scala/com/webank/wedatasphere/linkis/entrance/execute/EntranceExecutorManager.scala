@@ -86,7 +86,7 @@ abstract class EntranceExecutorManager(groupFactory: GroupFactory) extends Execu
 
   protected def findExecutors(job: Job): Array[EntranceEngine] = {
     val groupName = groupFactory.getGroupNameByEvent(job)
-
+    //可以看出,是否起新引擎由groupname决定,就是creator + username,而io-entrance只有file和hdfs2个groupname
     var engines = getOrCreateEngineManager().listEngines(_.getGroup.getGroupName == groupName)
 
     getOrCreateEntranceExecutorRulers().foreach(ruler => engines = ruler.rule(engines, job))
