@@ -75,6 +75,7 @@ abstract class AbstractEngineCreator extends EngineCreator {
     val parser = new DWCArgumentsParser
     var springConf = Map("spring.application.name" -> EngineManagerConfiguration.ENGINE_SPRING_APPLICATION_NAME.getValue,
       "server.port" -> port.toString, "spring.profiles.active" -> "engine",
+      //指定spring的log配置
       "logging.config" -> "classpath:log4j2-engine.xml",
       "eureka.client.serviceUrl.defaultZone" -> EngineManagerReceiver.getSpringConf("eureka.client.serviceUrl.defaultZone"))
     //除了上面的springConf,还要加上请求参数中的properties中以spring开头的配置
