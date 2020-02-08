@@ -69,7 +69,7 @@ class FIFOUserConsumer(schedulerContext: SchedulerContext,
   }
 
   override def run() = {
-    Thread.currentThread().setName(s"${toString}Thread")
+    Thread.currentThread().setName(s"${toString}Thread")//设置线程名 后，就不会使用创建线程池的默认的线程名了
     info(s"$toString thread started!")
     while (!terminate) {
       Utils.tryAndError(loop())
