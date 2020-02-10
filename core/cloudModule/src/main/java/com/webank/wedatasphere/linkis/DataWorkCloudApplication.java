@@ -63,7 +63,7 @@ import java.util.EnumSet;
  */
 @SpringBootApplication
 @EnableDiscoveryClient//包含eureka
-@RefreshScope//应该是暂时没用上这个功能的。包括remoteconfig的功能
+@RefreshScope//应该是暂时没用上这个功能的。包括remoteconfig的功能 https://blog.csdn.net/Anenan/article/details/85134208
 @ComponentScan(basePackages = "com.webank.wedatasphere",
         excludeFilters = @ComponentScan.Filter(type = FilterType.CUSTOM, classes = {DataWorkCloudCustomExcludeFilter.class}))
 public class DataWorkCloudApplication extends SpringBootServletInitializer {
