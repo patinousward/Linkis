@@ -20,11 +20,11 @@ import com.webank.wedatasphere.linkis.server.Message
 import org.springframework.web.bind.annotation.{RequestBody, RequestMapping, RequestMethod}
 
 /**
-  * Created by enjoyyin on 2018/8/28.  这里并没有使用feign注解，是自身封装了一层导致
+  * Created by enjoyyin on 2018/8/28.
   */
 private[rpc] trait RPCReceiveRemote {
 
-  @RequestMapping(value = Array("/rpc/receive"), method = Array(RequestMethod.POST))
+  @RequestMapping(value = Array("/rpc/receive"), method = Array(RequestMethod.POST))//openFein只支持RequestMapping注解
   def receive(@RequestBody message: Message): Message
 
   @RequestMapping(value = Array("/rpc/receiveAndReply"), method = Array(RequestMethod.POST))

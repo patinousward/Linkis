@@ -34,7 +34,7 @@ import org.springframework.context.event.EventListener
   * Created by enjoyyin on 2019/1/14.
   */
 @Configuration
-@EnableFeignClients//去掉这个注解ok吗
+@EnableFeignClients//去掉这个注解ok吗？不行。。因为rpc发送需要依靠openfein
 class RPCSpringConfiguration extends Logging {
 
   @Bean(Array("rpcServerLoader"))
