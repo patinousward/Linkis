@@ -77,6 +77,9 @@ private[rpc] class SpringMVCRPCSender private[rpc](private[rpc] val serviceInsta
                 case _ => None//如果protocol实体bean不继承Protocol类，一般就走这一步，那看来发送给谁是netflix自己处理的
               }
             }
+            //serviceInstance  一般情况下instance信息为null，表示可以使用Ribbon默认的轮询，这里如果instance不为null，代表
+            //1.刷新clinet的服务器列表，拿到servers的ip和端口，如果instance不为null，就找到这个server去请求，只会有一个，因为ip + 端口能确认一个server
+            //至于哪里使用了这个方法，就可以看哪个地方使用了Sender.getSender(serviceInstance: ServiceInstance) 这个方法
             instance.orElse(Option(SpringMVCRPCSender.this.serviceInstance)).filter(s => StringUtils.isNotBlank(s.getInstance))
               .foreach { serviceInstance =>
                 val server = RPCSpringBeanCache.getRPCServerLoader.getServer(getLoadBalancer, serviceInstance)
