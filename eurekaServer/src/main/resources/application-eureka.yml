@@ -17,6 +17,6 @@ eureka:
 #  server:
 #    enableSelfPreservation: false
     enable-self-preservation: false # 关闭自我保护
-    eviction-interval-timer-in-ms: 3000 # 检测到多少ms没心跳就下线该服务信息
+    eviction-interval-timer-in-ms: 3000 # eureka server清理无效节点的时间间隔，默认60000毫秒，即60秒
   server:
     response-cache-update-interval-ms: 2000 # 这个时间决定了多久会把readWriteCacheMap的缓存更新到readCacheMap上,readWriteCacheMap 是最新的 readCacheMap间隔时间从readWriteCacheMap中拉取数据，但是给client端是非最新的
