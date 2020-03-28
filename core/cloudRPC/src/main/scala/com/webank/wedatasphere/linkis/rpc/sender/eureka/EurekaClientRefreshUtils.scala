@@ -42,7 +42,7 @@ class EurekaClientRefreshUtils {
         val refreshRegistry = classOf[NetflixDiscoveryClient].getDeclaredMethod("refreshRegistry")
         refreshRegistry.setAccessible(true)
         refreshRegistry.invoke(disClient)//反射调用EurekaClient的refreshRegistry方法
-        Thread.sleep(100)
+        Thread.sleep(100) //EurekaClientConfigBean 中显示，请求刷新注册信息间隔是30s（cloud默认）
       case _ =>
     }
   }
